@@ -27,7 +27,7 @@ class TicTacToe:
 
     ########################################
     #
-    # Game interface
+    #           Game interface
     #
     ########################################
 
@@ -73,8 +73,6 @@ class TicTacToe:
                 else:
                     print("Thanks for playing!")
                     break
-
-
 
             if self.whoHas==self.X_TOKEN:
                 self.whoHas=self.O_TOKEN
@@ -129,7 +127,29 @@ class TicTacToe:
         self.board.setDataAtIndex(move, self.whoHas)
         self.callback_computersMove(tuple(self.board.dimCoordinateForIndex(move)))
 
+    #Call this to get the board for print.
+    def getBoard(self):
+        return self.board.getDimensionalData((None, None))
 
+    def makeMove(self,coordinates,token):
+        try:
+            self.__checkMove(coordinates,token)
+        except Exception as err:
+            print(str(err))
+            return
+        self.board.setData(coordinates,token)
+        self.__invertWhoHas()
+
+    def getComputersMoveForCurrentPosition(self):
+        move = self.computerAlgo.calculateMove(self.whoHas == self.X_TOKEN) #Move as Maximizer or Minimizer.
+        return (self.board.dimCoordinateForIndex(move),self.whoHas)
+
+    def getWinnerOfCurrentPosition(self):
+        if self.evalBoard() == self.MAX_EVAL:
+            return self.X_TOKEN
+        elif self.evalBoard() == self.MIN_EVAL:
+            return self.O_TOKEN
+        return None
 
     ###############################################
     #
@@ -175,26 +195,40 @@ class TicTacToe:
     # Private help methods
     #
     ########################
+    def __invertWhoHas(self):
+        if self.whoHas==self.X_TOKEN:
+            self.whoHas=self.O_TOKEN
+        else:
+            self.whoHas=self.X_TOKEN
+
     def __invertPlayersToken(self):
         if self.playersToken==self.X_TOKEN:
             self.playersToken=self.O_TOKEN
         else:
             self.playersToken=self.X_TOKEN
     def __checkMove(self,coordinate,token):
+        if not token in (self.X_TOKEN,self.O_TOKEN):
+            raise Exception("Only \'X\' or \'O\' is allowed as token!")
+            return
+
         if not self.whoHas == token:
             raise Exception("Wrong players move")
+            return
         try:
             x = int(coordinate[0])
             y = int(coordinate[1])
         except:
             raise Exception("Give tuple of integer as move! E.g. (1,1)")
+            return
 
         if x < 1 or x > self.size or y < 1 or y > self.size:
             print("!!!! Coord min=1 max=3 !!!")
             raise Exception("!!!! Coord min=1 max=3 !!!")
+            return
 
         if not self.__isFree((x, y)):
             raise Exception("!!! OCCUPIED SQUARE !!!")
+            return
 
 
 
@@ -261,9 +295,8 @@ class TicTacToe:
             return False
         return True
     def __isFree(self,coordinate):
-        if self.board.getData(coordinate)==self.NO_TOKEN:
-            return True
-        return False
+        return self.board.getData(coordinate)==self.NO_TOKEN:
+
     def __printBoard(self):
         list = self.board.getDimensionalData((None, None))
         for x in range(len(list) - 1, -1, -1):
@@ -313,4 +346,7 @@ class TicTacToe:
             addEval -= eval
 
         return addEval
+
+class TextBasedTicTacToeGame:
+    pass
 
