@@ -1,5 +1,9 @@
 import MinMaxAlgorithm as mma
 import StrideDimensions as sd
+import time
+import logging
+logging.basicConfig(level=logging.DEBUG, format='%(levelname)s=> %(message)s')
+#logging.disable(logging.CRITICAL)
 
 class TicTacToe:
     board = None
@@ -30,126 +34,32 @@ class TicTacToe:
     #           Game interface
     #
     ########################################
-
-    # Just call this to play textbased against defined algo.
-    def playTextbasedAgainstComputer(self):
-        print("*"*11)
-        print("TIC TAC TOE")
-        print("*"*11)
-        print("Play X or O? >")
-        token = input()
-        if token == self.O_TOKEN:
-            self.playersToken = self.O_TOKEN
-        self.whoHas = self.X_TOKEN
-
-        while True:
-            self.__printBoard()
-            if self.whoHas==self.playersToken:
-                moveCoordinates = self.__askPlayerForMove()
-                self.board.setData(moveCoordinates,self.whoHas)
-            else:
-                move = self.computerAlgo.calculateMove(self.playersToken==self.O_TOKEN)
-                print("My move: ",self.board.dimCoordinateForIndex(move))
-                self.board.setDataAtIndex(move,self.whoHas)
-
-            askPlayAgain = False
-            if not self.__checkThreeInARow() == None:
-                self.__printBoard()
-                print("WINNER IS ",self.whoHas)
-                askPlayAgain = True
-            elif self.__isBoardFull():
-                self.__printBoard()
-                print("IT IS A TIE")
-                askPlayAgain=True
-
-            if askPlayAgain:
-                print("Rematch? (Y/n)>")
-                rematch=input()
-                if not rematch=='n':
-                    self.board.fillData(self.NO_TOKEN) #Clearboard:
-                    self.__invertPlayersToken()
-                    self.whoHas = self.X_TOKEN
-                    continue
-                else:
-                    print("Thanks for playing!")
-                    break
-
-            if self.whoHas==self.X_TOKEN:
-                self.whoHas=self.O_TOKEN
-            else:
-                self.whoHas=self.X_TOKEN
-
-    # Call this if you want to build an external GUI that
-    # plays against this engine.
-    #
-    #   callback_computersMove - a function that takes as
-    #                            argument a tuple with
-    #                            computers move as coordinates
-    #                            (1,1)...(3,3)
-    #   callback_messageHandler - A function that takes a string
-    #                             as argument with a message to
-    #                             a user.
-    #   callback_askForUserMove - When this is call the engine
-    #                             is waiting for at user to make
-    #                             a move.
-    #                             Call "userMove"-method below.
-    #
-    callback_computersMove = None
-    callback_messageHandler = None
-    callback_askForUserMove = None
-    def playGenericGame(self,callback_computersMove,\
-                        callback_messageHandler,\
-                        callback_askForUserMove,
-                        playersToken):
-        return #To be continued implementation
-        self.playersToken = playersToken
-        self.callback_computersMove = callback_computersMove
-        self.callback_messageHandler = callback_messageHandler
-        self.callback_askForUserMove = callback_askForUserMove
-
-        self.callback_messageHandler("Game starting!")
-        if self.whoHas == self.playersToken:
-            self.callback_askForUserMove()
-
-        #TO BE CONTINUED...
-
-    #Takes a users move as a tuple (1,1) - (3,3)
-    def userMove(self,coords):
-        try:
-            self.__checkMove(coords,self.playersToken)
-        except Exception as err:
-            self.callback_messageHandler(str(err))
-
-        print("Come here?")
-        self.board.setData(coords,self.playersToken)
-
-        move = self.computerAlgo.calculateMove(self.playersToken == self.O_TOKEN)
-        self.board.setDataAtIndex(move, self.whoHas)
-        self.callback_computersMove(tuple(self.board.dimCoordinateForIndex(move)))
-
     #Call this to get the board for print.
     def getBoard(self):
         return self.board.getDimensionalData((None, None))
-
     def makeMove(self,coordinates,token):
         try:
             self.__checkMove(coordinates,token)
         except Exception as err:
             print(str(err))
-            return
+            return False
         self.board.setData(coordinates,token)
         self.__invertWhoHas()
-
+        return True
     def getComputersMoveForCurrentPosition(self):
         move = self.computerAlgo.calculateMove(self.whoHas == self.X_TOKEN) #Move as Maximizer or Minimizer.
         return (self.board.dimCoordinateForIndex(move),self.whoHas)
-
     def getWinnerOfCurrentPosition(self):
         if self.evalBoard() == self.MAX_EVAL:
             return self.X_TOKEN
         elif self.evalBoard() == self.MIN_EVAL:
             return self.O_TOKEN
+        elif self.__isBoardFull():
+            return self.NO_TOKEN
         return None
+    def resetGame(self):
+        self.whoHas = self.X_TOKEN
+        self.board.fillData(self.NO_TOKEN)#clearboard
 
     ###############################################
     #
@@ -200,12 +110,6 @@ class TicTacToe:
             self.whoHas=self.O_TOKEN
         else:
             self.whoHas=self.X_TOKEN
-
-    def __invertPlayersToken(self):
-        if self.playersToken==self.X_TOKEN:
-            self.playersToken=self.O_TOKEN
-        else:
-            self.playersToken=self.X_TOKEN
     def __checkMove(self,coordinate,token):
         if not token in (self.X_TOKEN,self.O_TOKEN):
             raise Exception("Only \'X\' or \'O\' is allowed as token!")
@@ -230,34 +134,7 @@ class TicTacToe:
             raise Exception("!!! OCCUPIED SQUARE !!!")
             return
 
-
-
-    def __askPlayerForMove(self):
-        while True:
-            print("Your move(" + self.whoHas + ")>")
-            move = input()
-            coord = move.split(",")
-            if len(coord) < 2 or len(coord) > 2:
-                print("!!! Give coord eg. 3,2 !!!")
-                continue
-            try:
-                x = int(coord[0])
-                y = int(coord[1])
-                if x < 1 or x > self.size or y < 1 or y > self.size:
-                    print("!!!! Coord min=1 max=3 !!!")
-                    continue
-                else:
-                    if not self.__isFree((x, y)):
-                        print("!!! OCCUPIED SQUARE !!!")
-                        continue
-                    else:
-                        break
-            except:
-                print("!!! Give numbers for coords !!!")
-                continue
-
-        return (x, y)
-    def __checkWin(self,ll):
+    def __checkForThree(self,ll):
         if self.NO_TOKEN in ll:
             return None
         if all([x==self.X_TOKEN for x in ll]):
@@ -268,11 +145,11 @@ class TicTacToe:
     def __checkThreeInARow(self):
         for x in range(self.size):
             row = self.board.getDimensionalData((None,x+1))
-            token = self.__checkWin(row)
+            token = self.__checkForThree(row)
             if not token == None:
                 return token
             col = self.board.getDimensionalData((x+1,None))
-            token = self.__checkWin(col)
+            token = self.__checkForThree(col)
             if not token == None:
                 return token
 
@@ -281,11 +158,11 @@ class TicTacToe:
         # (1,1) and upward
         # (1,size) and downward
         dia = self.board.getDimensionalDataWithDirection((1,1),(1,1))
-        token = self.__checkWin(dia)
+        token = self.__checkForThree(dia)
         if not token == None:
             return token
         dia = self.board.getDimensionalDataWithDirection((1,3),(1,-1))
-        token = self.__checkWin(dia)
+        token = self.__checkForThree(dia)
         if not token == None:
             return token
 
@@ -295,14 +172,8 @@ class TicTacToe:
             return False
         return True
     def __isFree(self,coordinate):
-        return self.board.getData(coordinate)==self.NO_TOKEN:
+        return self.board.getData(coordinate)==self.NO_TOKEN
 
-    def __printBoard(self):
-        list = self.board.getDimensionalData((None, None))
-        for x in range(len(list) - 1, -1, -1):
-            for y in range(len(list)):
-                print(list[x][y], end=' ')
-            print("")
 
     ################################
     #
@@ -347,6 +218,130 @@ class TicTacToe:
 
         return addEval
 
+"""
+Example how to use TicTacToe-class to play.
+"""
 class TextBasedTicTacToeGame:
-    pass
+    def __init__(self):
+        self.game = TicTacToe()
 
+
+    def play(self):
+        print("*" * 11)
+        print("TIC TAC TOE")
+        print("*" * 11)
+        print("Play X or O? (X)>")
+        self.playersToken = self.game.X_TOKEN
+        self.computersToken = self.game.O_TOKEN
+        if input() == self.game.O_TOKEN:
+            self.playersToken = self.game.O_TOKEN
+            self.computersToken = self.game.X_TOKEN
+
+        while True:
+            self.printBoard()
+            print("Computer evaluates board to: ",self.game.evalBoard())
+            if self.game.whoHas == self.playersToken:
+                try:
+                    print("Computer suggestion:",self.game.getComputersMoveForCurrentPosition())
+                    playersmove=self.__askPlayerForMove()
+                    self.game.makeMove(playersmove,self.playersToken)
+                except Exception as err:
+                    logging.DEBUG(str(err))
+            else:
+                move = self.game.getComputersMoveForCurrentPosition()
+                self.game.makeMove(move[0],move[1])
+                print("Computer moves: ",move[0])
+
+            askAgain = False
+            if self.game.getWinnerOfCurrentPosition() == self.playersToken:
+                self.printBoard()
+                askAgain = True
+            elif self.game.getWinnerOfCurrentPosition() == self.computersToken:
+                self.printBoard()
+                print("You loose...sorry.")
+                askAgain = True
+            elif self.game.getWinnerOfCurrentPosition() == self.game.NO_TOKEN:
+                self.printBoard()
+                print("It's a draw!")
+                askAgain = True
+
+            if askAgain:
+                print("Another game? (Y/n)")
+                ans=input()
+                if ans=='n':
+                    print("Ok! Thank's for the game!")
+                    break
+                self.game.resetGame()
+                self.__swapToken()
+
+    def printBoard(self):
+        list = self.game.getBoard()
+        for x in range(len(list) - 1, -1, -1):
+            for y in range(len(list)):
+                print(list[x][y], end=' ')
+            print("")
+    def __swapToken(self):
+        tmpToken = self.playersToken
+        self.playersToken = self.computersToken
+        self.computersToken=tmpToken
+    def __askPlayerForMove(self):
+        while True:
+            print("Your move(" + self.playersToken + ")>")
+            move = input()
+            coord = move.split(",")
+            if len(coord) < 2 or len(coord) > 2:
+                print("!!! Give coord eg. 3,2 !!!")
+                continue
+            try:
+                x = int(coord[0])
+                y = int(coord[1])
+                if x < 1 or x > self.game.size or y < 1 or y > self.game.size:
+                    print("!!!! Coord min=1 max=3 !!!")
+                    continue
+            except:
+                print("!!! Give numbers for coords !!!")
+                continue
+            break
+
+        return (x, y)
+
+class computerVsComputerGame:
+
+    def __init__(self):
+        self.game = TicTacToe()
+
+    def play(self):
+        print("*" * 11)
+        print("TIC TAC TOE")
+        print("*" * 11)
+        while True:
+            self.printBoard()
+            time.sleep(1)
+            move = self.game.getComputersMoveForCurrentPosition()
+            print("Computer moves:",move)
+            self.game.makeMove(move[0],move[1])
+
+            askAgain = False
+            winResult = self.game.getWinnerOfCurrentPosition()
+            if winResult == self.game.X_TOKEN or winResult == self.game.O_TOKEN:
+                self.printBoard()
+                print("WINNER: ",winResult)
+                askAgain = True
+            elif winResult == self.game.NO_TOKEN:
+                self.printBoard()
+                print("It's a draw!")
+                askAgain = True
+
+            if askAgain:
+                print("Another game? (Y/n)")
+                ans = input()
+                if ans == 'n':
+                    print("Ok! Thank's for watching!")
+                    break
+                self.game.resetGame()
+    def printBoard(self):
+        list = self.game.getBoard()
+        for x in range(len(list) - 1, -1, -1):
+            for y in range(len(list)):
+                print(list[x][y], end=' ')
+            print("")
