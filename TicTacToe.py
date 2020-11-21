@@ -1,9 +1,39 @@
+#!/usr/bin/env python
+
+"""
+# TicTacToe implements game with same name, based on algorithms of
+#  choice.
+#
+# The purpose of this is:
+#   1) Implement the game in a generic way.
+#   2) For demo purpose and educational purpose. And perhaps some amusement.
+#
+# Usage:
+#
+#   Make an object of class TicTacToe and attach your own GUI to it. Two example
+#   classes are attached that examplifies how to use class TicTacToe.
+#
+#   When creating object, try out other game algorithms than MinMax, by
+#   attaching these to "computerAlgo".
+#
+"""
+
 import MinMaxAlgorithm as mma
 import StrideDimensions as sd
 import time
 import logging
 logging.basicConfig(level=logging.DEBUG, format='%(levelname)s=> %(message)s')
 #logging.disable(logging.CRITICAL)
+
+__author__ = "Helge Modén, www.github.com/helgemod"
+__copyright__ = "Copyright 2020, Helge Modén"
+__credits__ = None
+__license__ = "MIT"
+__version__ = "1.0.1"
+__maintainer__ = "Helge Modén, https://github.com/helgemod/MinMaxAlgorithm"
+__email__ = "helgemod@gmail.com"
+__status__ = "https://github.com/helgemod/GamePlayer"
+__date__ = "2020-11-20"
 
 class TicTacToe:
     board = None
@@ -242,7 +272,7 @@ class TextBasedTicTacToeGame:
             print("Computer evaluates board to: ",self.game.evalBoard())
             if self.game.whoHas == self.playersToken:
                 try:
-                    print("Computer suggestion:",self.game.getComputersMoveForCurrentPosition())
+                    #print("Computer suggestion:",self.game.getComputersMoveForCurrentPosition())
                     playersmove=self.__askPlayerForMove()
                     self.game.makeMove(playersmove,self.playersToken)
                 except Exception as err:
