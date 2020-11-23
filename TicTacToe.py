@@ -53,11 +53,11 @@ class TicTacToe:
     def __init__(self):
         self.board = sd.StrideDimension((3,3))
         self.board.fillData(self.NO_TOKEN)
-        self.computerAlgo = mma.MinMaxAlgo(self.evalBoard,\
-                                           self.moveX,self.moveO,\
-                                           self.undoMove,self.undoMove,\
-                                           self.getPossibleMoves,self.getPossibleMoves,\
-                                           self.MIN_EVAL,self.MAX_EVAL)
+        self.computerAlgo = mma.GameAlgo(self.evalBoard,
+                                           self.moveX, self.moveO,
+                                           self.undoMove, self.undoMove,
+                                           self.getPossibleMoves, self.getPossibleMoves,
+                                           self.MIN_EVAL, self.MAX_EVAL)
 
     ########################################
     #
@@ -67,18 +67,20 @@ class TicTacToe:
     #Call this to get the board for print.
     def getBoard(self):
         return self.board.getDimensionalData((None, None))
-    def makeMove(self,coordinates,token):
+    def makeMove(self, coordinates, token):
         try:
-            self.__checkMove(coordinates,token)
+            self.__checkMove(coordinates, token)
         except Exception as err:
             print(str(err))
             return False
-        self.board.setData(coordinates,token)
+        self.board.setData(coordinates, token)
         self.__invertWhoHas()
         return True
     def getComputersMoveForCurrentPosition(self):
-        move = self.computerAlgo.calculateMove(self.whoHas == self.X_TOKEN) #Move as Maximizer or Minimizer.
-        return (self.board.dimCoordinateForIndex(move),self.whoHas)
+        #move = self.computerAlgo.calculateMove(mma.MINMAX_ALGO, self.whoHas == self.X_TOKEN)
+        move = self.computerAlgo.calculateMove(mma.MINMAXALPHABETAPRUNING_ALGO, self.whoHas == self.X_TOKEN)
+        #move = self.computerAlgo.calculateMove(mma.MINMAX_ALGO_WITH_LOGGING, self.whoHas == self.X_TOKEN)
+        return (self.board.dimCoordinateForIndex(move), self.whoHas)
     def getWinnerOfCurrentPosition(self):
         if self.evalBoard() == self.MAX_EVAL:
             return self.X_TOKEN
@@ -140,31 +142,25 @@ class TicTacToe:
             self.whoHas=self.O_TOKEN
         else:
             self.whoHas=self.X_TOKEN
-    def __checkMove(self,coordinate,token):
-        if not token in (self.X_TOKEN,self.O_TOKEN):
+    def __checkMove(self, coordinate, token):
+        if token not in (self.X_TOKEN, self.O_TOKEN):
             raise Exception("Only \'X\' or \'O\' is allowed as token!")
-            return
 
         if not self.whoHas == token:
             raise Exception("Wrong players move")
-            return
         try:
             x = int(coordinate[0])
             y = int(coordinate[1])
         except:
             raise Exception("Give tuple of integer as move! E.g. (1,1)")
-            return
 
         if x < 1 or x > self.size or y < 1 or y > self.size:
             print("!!!! Coord min=1 max=3 !!!")
             raise Exception("!!!! Coord min=1 max=3 !!!")
-            return
 
         if not self.__isFree((x, y)):
             raise Exception("!!! OCCUPIED SQUARE !!!")
-            return
-
-    def __checkForThree(self,ll):
+    def __checkForThree(self, ll):
         if self.NO_TOKEN in ll:
             return None
         if all([x==self.X_TOKEN for x in ll]):
@@ -212,14 +208,14 @@ class TicTacToe:
     #   engines strength.
     #
     ################################
-    def __evalCenter(self,eval):
+    def __evalCenter(self, eval):
         centerToken = self.board.getData((2,2))
         if centerToken == self.X_TOKEN:
             return eval
         elif centerToken == self.O_TOKEN:
             return -eval
         return 0
-    def __evalTwoInARow(self,eval):
+    def __evalTwoInARow(self, eval):
         addEval = 0
         for x in range(self.size):
             row = self.board.getDimensionalData((None,x+1))
@@ -255,7 +251,6 @@ class TextBasedTicTacToeGame:
     def __init__(self):
         self.game = TicTacToe()
 
-
     def play(self):
         print("*" * 11)
         print("TIC TAC TOE")
@@ -269,22 +264,21 @@ class TextBasedTicTacToeGame:
 
         while True:
             self.printBoard()
-            print("Computer evaluates board to: ",self.game.evalBoard())
             if self.game.whoHas == self.playersToken:
                 try:
-                    #print("Computer suggestion:",self.game.getComputersMoveForCurrentPosition())
-                    playersmove=self.__askPlayerForMove()
-                    self.game.makeMove(playersmove,self.playersToken)
+                    playersmove = self.__askPlayerForMove()
+                    self.game.makeMove(playersmove, self.playersToken)
                 except Exception as err:
                     logging.DEBUG(str(err))
             else:
                 move = self.game.getComputersMoveForCurrentPosition()
                 self.game.makeMove(move[0],move[1])
-                print("Computer moves: ",move[0])
+                print("Computer moves: ", move[0])
 
             askAgain = False
             if self.game.getWinnerOfCurrentPosition() == self.playersToken:
                 self.printBoard()
+                print("You win! Congrats!")
                 askAgain = True
             elif self.game.getWinnerOfCurrentPosition() == self.computersToken:
                 self.printBoard()
