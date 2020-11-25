@@ -78,13 +78,14 @@ class TicTacToe:
         return True
     def getComputersMoveForCurrentPosition(self):
         #move = self.computerAlgo.calculateMove(mma.MINMAX_ALGO, self.whoHas == self.X_TOKEN)
-        move = self.computerAlgo.calculateMove(mma.MINMAXALPHABETAPRUNING_ALGO, self.whoHas == self.X_TOKEN)
+        move = self.computerAlgo.calculateMove(mma.MINMAXALPHABETAPRUNING_ALGO, self.whoHas == self.X_TOKEN, 2)
         #move = self.computerAlgo.calculateMove(mma.MINMAX_ALGO_WITH_LOGGING, self.whoHas == self.X_TOKEN)
         return (self.board.dimCoordinateForIndex(move), self.whoHas)
     def getWinnerOfCurrentPosition(self):
-        if self.evalBoard() == self.MAX_EVAL:
+        currentEvaluation = self.evalBoard()
+        if currentEvaluation == self.MAX_EVAL:
             return self.X_TOKEN
-        elif self.evalBoard() == self.MIN_EVAL:
+        elif currentEvaluation == self.MIN_EVAL:
             return self.O_TOKEN
         elif self.__isBoardFull():
             return self.NO_TOKEN
