@@ -502,48 +502,73 @@ class FiveInARow:
         evaluations = {'XXXXX': self.MAX_EVAL,
                        '-XXXX': 10,
                        'XXXX-': 10,
+                       'X-XXX': 10,
+                       'XXX-X': 10,
+                       'OXXX--': 3,
                        '-XXX-': 5,
-                       '-XX-X': 5,
+                       '--XXXO': 5,
                        'XX-X-': 5,
-                       '-XX--': 3,
-                       '--XX-': 3,
-                       '--X--': 1,
+                       '-XX-X': 5,
+                       'X-XX-': 5,
+                       '-X-XX': 5,
+                       '-XX-': 3,
+                       '-X-': 1,
                        'OOOOO': self.MIN_EVAL,
                        '-OOOO': -10,
                        'OOOO-': -10,
+                       'OOO-O': -10,
+                       'O-OOO': -10,
+                       'XOOO--': -3,
                        '-OOO-': -5,
-                       '-OO-O': -5,
+                       '--OOOX': -3,
                        'OO-O-': -5,
-                       '-OO--': -3,
-                       '--OO-': -3,
-                       '--O--': 1
+                       '-OO-O': -5,
+                       'O-OO-': -5,
+                       '-O-OO': -5,
+                       '-OO-': -3,
+                       '-O-': -1
                        }
 
-        print(what, startCoordDic, dataList)
-
+        #print("Regarding: "+what+" "+str(startCoordDic))
         dataStr = ''.join(dataList)
-        print(dataStr)
-
-
-
-        """
-        if self.__checkOneOfAKind(dataList, 4, 5) == self.X_TOKEN:
-            print("%s with startcoord: %s has four X in it!" % (what, str(startCoordDic)))
-        if self.__checkOneOfAKind(dataList, 4, 5) == self.O_TOKEN:
-            print("%s with startcoord: %s has four O in it!" % (what, str(startCoordDic)))
-        if self.__checkOneOfAKind(dataList, 3, 5) == self.X_TOKEN:
-            print("%s with startcoord: %s has three X in it!" % (what, str(startCoordDic)))
-        if self.__checkOneOfAKind(dataList, 3, 5) == self.O_TOKEN:
-            print("%s with startcoord: %s has three O in it!" % (what, str(startCoordDic)))
-        if self.__checkOneOfAKind(dataList, 2, 5) == self.X_TOKEN:
-            print("%s with startcoord: %s has two X in it!" % (what, str(startCoordDic)))
-        if self.__checkOneOfAKind(dataList, 2, 5) == self.O_TOKEN:
-            print("%s with startcoord: %s has two O in it!" % (what, str(startCoordDic)))
-        """
+        for pattern in evaluations:
+            result = re.search(pattern, dataStr)
+            if result is not None:
+                print(what, pattern, evaluations[pattern])
+                self.evalRes += evaluations[pattern]
+                #print("Found "+pattern+" in "+dataStr+" at " + str(result.span()) + " for a val of: " + str(evaluations[pattern]))
         return True # True => Continue scan
-
+    evalRes = 0
     def debug(self):
+
+
+
+        self.evalRes = 0
         self.__scanBoard(5, self.help)
+        print("Current Evaluation of board:", self.evalRes)
+
+    def toWhichDownDiagonalBelongsCoord(self, coord):
+        r = coord[0]+coord[1]-1
+        c = 1
+        if r > self.getNumberOfRows():
+            r = self.getNumberOfRows()
+            c = self.getNumberOfColumns() - (self.getNumberOfRows() - coord[1])
+
+        dia = self.board.getDimensionalDataWithDirection((c, r),(1, -1))
+
+        return dia
+
+    def toWhichUpDiagonalBelongsCoord(self, coord):
+        c = coord[0]-coord[1]+1
+        r = 1
+        if c < 1:
+            c = 1
+            r = coord[1] - coord[0] + 1
+
+        dia = self.board.getDimensionalDataWithDirection((c,r),(1,1))
+        return dia
+
+
 
 ####### END CLASS FIVE IN A ROW #########
 
@@ -568,6 +593,8 @@ class TextBasedFiveInARowGame:
                 try:
                     playersmove = self.__askPlayerForMove()
                     self.game.makeMove(playersmove, self.playersToken)
+                    print("DownDia:", str(self.game.toWhichDownDiagonalBelongsCoord(playersmove)))
+                    print("UpDia:", str(self.game.toWhichUpDiagonalBelongsCoord(playersmove)))
                     #print("")
                     #self.printBoard()
                     #print("")
@@ -586,7 +613,7 @@ class TextBasedFiveInARowGame:
                 #print("")
 
 
-            winnerOfCurrentPos = self.game.getWinnerOfCurrentPosition()
+            winnerOfCurrentPos = None #self.game.getWinnerOfCurrentPosition()
             if winnerOfCurrentPos is None:
                 continue
 
