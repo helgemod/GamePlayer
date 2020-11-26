@@ -44,6 +44,13 @@ class FiveInARow:
     MIN_EVAL = -100
     MAX_EVAL = 100
 
+    ANALYZE_ROW = 'AnalyzeRow'
+    ANALYZE_COL = 'AnalyzeCol'
+    ANALYZE_DIAUP = 'AnalyzeDiagonalUp'
+    ANALYZE_DIADW = 'AnalyzeDiagonalDown'
+    KEY_COORD_COL = 'keyCoordColumn'
+    KEY_COORD_ROW = 'keyCoordRow'
+
     # In future this can be able to point at different algorithms
     # to test them.
     computerAlgo = None
@@ -53,7 +60,7 @@ class FiveInARow:
         #self.rows = 3
         self.whoHas = self.X_TOKEN
         self.playersToken = self.X_TOKEN
-        self.board = sd.StrideDimension((6, 6)) #cols=6 rows=3
+        self.board = sd.StrideDimension((1, 1)) #cols=6 rows=3
         self.board.fillData(self.NO_TOKEN)
         self.computerAlgo = mma.GameAlgo(self.evalBoard,
                                            self.moveX, self.moveO,
@@ -82,7 +89,7 @@ class FiveInARow:
         return True
     def getComputersMoveForCurrentPosition(self):
         #move = self.computerAlgo.calculateMove(mma.MINMAX_ALGO, self.whoHas == self.X_TOKEN)
-        move = self.computerAlgo.calculateMove(mma.MINMAXALPHABETAPRUNING_ALGO, self.whoHas == self.X_TOKEN, 2)
+        move = self.computerAlgo.calculateMove(mma.MINMAXALPHABETAPRUNING_ALGO, self.whoHas == self.X_TOKEN, 4)
         #move = self.computerAlgo.calculateMove(mma.MINMAX_ALGO_WITH_LOGGING, self.whoHas == self.X_TOKEN)
         return (self.board.dimCoordinateForIndex(move), self.whoHas)
     def getWinnerOfCurrentPosition(self):
@@ -100,7 +107,9 @@ class FiveInARow:
         return None
     def resetGame(self):
         self.whoHas = self.X_TOKEN
-        self.board.fillData(self.NO_TOKEN)#clearboard
+        self.board = sd.StrideDimension((1, 1))  # cols=6 rows=3
+        self.board.fillData(self.NO_TOKEN)
+        #self.board.fillData(self.NO_TOKEN)#clearboard
     def getNumberOfColumns(self):
         return self.board.dimensions[0]
     def getNumberOfRows(self):
@@ -187,7 +196,45 @@ class FiveInARow:
     def undoMove(self, move):
         self.board.setDataAtIndex(move, self.NO_TOKEN)
     def getPossibleMoves(self):
-        return self.board.getIndexListWhereDataIs(self.NO_TOKEN)
+
+        #print("")
+        #print("------")
+        #print("")
+
+        winnerOfCurrentPos = self.getWinnerOfCurrentPosition()
+        if winnerOfCurrentPos is None:
+            # Try to limit possible moves! Otherwise algo will be too slow.
+            moveList = self.board.getIndexListWhereDataIs(self.NO_TOKEN)
+
+            allX = self.board.getIndexListWhereDataIs(self.X_TOKEN)
+            allO = self.board.getIndexListWhereDataIs(self.O_TOKEN)
+            all = allX+allO
+            maxX = 1
+            minX = 100
+            maxY = 1
+            minY = 100
+            for ind in all:
+                coord = self.board.dimCoordinateForIndex(ind)
+                maxX = max(coord[0], maxX)
+                maxY = max(coord[1], maxY)
+                minX = min(coord[0], minX)
+                minY = min(coord[1], minY)
+
+            limitXUp = maxX + 1
+            limitXDown = minX - 1
+            limitYUp = maxY + 1
+            limitYDown = minY - 1
+
+            retList = []
+            for moveInd in moveList:
+                currentCoord = self.board.dimCoordinateForIndex(moveInd)
+                if limitXDown <= currentCoord[0] <= limitXUp and limitYDown <= currentCoord[1] <= limitYUp:
+                        retList.append(moveInd)
+
+            return retList
+        else:
+            print("GAME OVER! NO MOVE POSSIBLE MOVES TO BE MADE! for this pos:")
+            return [] # If the game is over. No possible moves further can be done!
 
 
     ########################
@@ -232,34 +279,37 @@ class FiveInARow:
 
 
     # Scans the whole board and uses help methods above to look for 'howMany' in a row.
-    def __checkInARowSomewhereOnBoard(self, howMany):
+    # analyzeFunc shall take argument: (whatIsScanned, {startCoord}, [dataAsList])
+    #
+    def __scanBoard(self, howMany, analyzeFunc):
         for r in range(self.getNumberOfRows()):
             row = self.board.getDimensionalData((None, r+1))
-            token = self.__checkInARowInList(row, howMany)
-            if token is not None:
-                return token
+            if len(row) < howMany:
+                break
+            if not analyzeFunc(self.ANALYZE_ROW, {self.KEY_COORD_COL: 1, self.KEY_COORD_ROW: r+1}, row):
+                return
 
         for c in range(self.getNumberOfColumns()):
             col = self.board.getDimensionalData((c+1, None))
-            token = self.__checkInARowInList(col, howMany)
-            if token is not None:
-                return token
+            if len(col) < howMany:
+                break
+            if not analyzeFunc(self.ANALYZE_COL, {self.KEY_COORD_COL: c+1, self.KEY_COORD_ROW: 1}, col):
+                return
 
         # Now check diagonals UPWARDS /
         for dcu in range(self.getNumberOfColumns()):
             diaUpCol = self.board.getDimensionalDataWithDirection((dcu + 1, 1), (1, 1))
             if len(diaUpCol) < howMany:
                 break
-            token = self.__checkInARowInList(diaUpCol, howMany)
-            if token is not None:
-                return token
+            if not analyzeFunc(self.ANALYZE_DIAUP, {self.KEY_COORD_COL: dcu + 1, self.KEY_COORD_ROW: 1}, diaUpCol):
+                return
+
         for dru in range(self.getNumberOfRows()-1):
             diaUpRow = self.board.getDimensionalDataWithDirection((1, dru + 2), (1, 1))
             if len(diaUpRow) < howMany:
                 break
-            token = self.__checkInARowInList(diaUpRow, howMany)
-            if token is not None:
-                return token
+            if not analyzeFunc(self.ANALYZE_DIAUP, {self.KEY_COORD_COL: 1, self.KEY_COORD_ROW: dru + 2}, diaUpRow):
+                return
 
         # Now check diagonals DOWNWARDS \
         #
@@ -271,21 +321,19 @@ class FiveInARow:
             diaDownCol = self.board.getDimensionalDataWithDirection((1, noOfRows - dcd), (1, -1))
             if len(diaDownCol) < howMany:
                 break
-            token = self.__checkInARowInList(diaDownCol, howMany)
-            if token is not None:
-                return token
+            if not analyzeFunc(self.ANALYZE_DIADW, {self.KEY_COORD_COL: 1, self.KEY_COORD_ROW: noOfRows - dcd}, diaDownCol):
+                return
 
         # 2) Start in upper-left corner and go right in upper row
         #    and pick out the downward diagonal.
-
         for drd in range(noOfRows-1):
             diaDownRow = self.board.getDimensionalDataWithDirection((drd + 2, noOfRows), (1, -1))
-            if len(diaDownRow) < 5:
+            if len(diaDownRow) < howMany:
                 break
-            token = self.__checkInARowInList(diaDownRow, howMany)
-            if token is not None:
-                return token
+            if not analyzeFunc(self.ANALYZE_DIADW, {self.KEY_COORD_COL: drd + 2, self.KEY_COORD_ROW: noOfRows}, diaDownRow):
+                return
         return None
+
     def __isBoardFull(self):
         if self.NO_TOKEN in self.board.getAllData():
             return False
@@ -298,19 +346,18 @@ class FiveInARow:
 
     # If it is a long game, the board may be extended during the game.
     def __extendBoardIfCloseToEdge(self):
-        return
         extends = self.__numberOfExtendsNeededToEdgeLow()
         if extends > 0:
-            self.board.extendDimension(2, extends, True, self.NO_TOKEN)
+            self.board.extendDimension(2, 1, True, self.NO_TOKEN)
         extends = self.__numberOfExtendsNeededToEdgeHigh()
         if extends > 0:
-            self.board.extendDimension(2, extends, False, self.NO_TOKEN)
+            self.board.extendDimension(2, 1, False, self.NO_TOKEN)
         extends = self.__numberOfExtendsNeededToEdgeLeft()
         if extends > 0:
-            self.board.extendDimension(1, extends, True, self.NO_TOKEN)
+            self.board.extendDimension(1, 1, True, self.NO_TOKEN)
         extends = self.__numberOfExtendsNeededToEdgeRight()
         if extends > 0:
-            self.board.extendDimension(1, extends, False, self.NO_TOKEN)
+            self.board.extendDimension(1, 1, False, self.NO_TOKEN)
     def __numberOfExtendsNeededToEdgeLow(self):
         extendsNeeded = 0
         ll = self.board.getDimensionalData((None, 1))
@@ -373,15 +420,15 @@ class FiveInARow:
 
         token4CU = self.__checkOneOfAKind(inList, 4, 5)
         if token4CU == self.X_TOKEN:
-            addEval += 8
+            addEval += 50
         elif token4CU == self.O_TOKEN:
-            addEval -= 8
+            addEval -= 50
 
         token3CU = self.__checkOneOfAKind(inList, 3, 5)
         if token3CU == self.X_TOKEN:
-            addEval += 5
+            addEval += 30
         elif token3CU == self.O_TOKEN:
-            addEval -= 5
+            addEval -= 30
 
         token2CU = self.__checkOneOfAKind(inList, 2, 5)
         if token2CU == self.X_TOKEN:
@@ -450,8 +497,53 @@ class FiveInARow:
                 return self.O_TOKEN
         return None
 
+    def help(self, what, startCoordDic, dataList):
+
+        evaluations = {'XXXXX': self.MAX_EVAL,
+                       '-XXXX': 10,
+                       'XXXX-': 10,
+                       '-XXX-': 5,
+                       '-XX-X': 5,
+                       'XX-X-': 5,
+                       '-XX--': 3,
+                       '--XX-': 3,
+                       '--X--': 1,
+                       'OOOOO': self.MIN_EVAL,
+                       '-OOOO': -10,
+                       'OOOO-': -10,
+                       '-OOO-': -5,
+                       '-OO-O': -5,
+                       'OO-O-': -5,
+                       '-OO--': -3,
+                       '--OO-': -3,
+                       '--O--': 1
+                       }
+
+        print(what, startCoordDic, dataList)
+
+        dataStr = ''.join(dataList)
+        print(dataStr)
+
+
+
+        """
+        if self.__checkOneOfAKind(dataList, 4, 5) == self.X_TOKEN:
+            print("%s with startcoord: %s has four X in it!" % (what, str(startCoordDic)))
+        if self.__checkOneOfAKind(dataList, 4, 5) == self.O_TOKEN:
+            print("%s with startcoord: %s has four O in it!" % (what, str(startCoordDic)))
+        if self.__checkOneOfAKind(dataList, 3, 5) == self.X_TOKEN:
+            print("%s with startcoord: %s has three X in it!" % (what, str(startCoordDic)))
+        if self.__checkOneOfAKind(dataList, 3, 5) == self.O_TOKEN:
+            print("%s with startcoord: %s has three O in it!" % (what, str(startCoordDic)))
+        if self.__checkOneOfAKind(dataList, 2, 5) == self.X_TOKEN:
+            print("%s with startcoord: %s has two X in it!" % (what, str(startCoordDic)))
+        if self.__checkOneOfAKind(dataList, 2, 5) == self.O_TOKEN:
+            print("%s with startcoord: %s has two O in it!" % (what, str(startCoordDic)))
+        """
+        return True # True => Continue scan
+
     def debug(self):
-        pass
+        self.__scanBoard(5, self.help)
 
 ####### END CLASS FIVE IN A ROW #########
 
@@ -476,22 +568,23 @@ class TextBasedFiveInARowGame:
                 try:
                     playersmove = self.__askPlayerForMove()
                     self.game.makeMove(playersmove, self.playersToken)
-                    print("")
-                    self.printBoard()
-                    print("")
+                    #print("")
+                    #self.printBoard()
+                    #print("")
                 except Exception as err:
                     print(str(err))
             else:
-                move = self.game.getComputersMoveForCurrentPosition()
-                self.game.makeMove(move[0], move[1])
+                #move = self.game.getComputersMoveForCurrentPosition()
+                #self.game.makeMove(move[0], move[1])
+                #print("Computer moves: ", move[0])
 
-                #playersmove = self.__askPlayerForMove()
-                #self.game.makeMove(playersmove, self.computersToken)
+                playersmove = self.__askPlayerForMove()
+                self.game.makeMove(playersmove, self.computersToken)
 
-                print("")
-                self.printBoard()
-                print("")
-                print("Computer moves: ", move[0])
+                #print("")
+                #self.printBoard()
+                #print("")
+
 
             winnerOfCurrentPos = self.game.getWinnerOfCurrentPosition()
             if winnerOfCurrentPos is None:
@@ -548,8 +641,10 @@ class TextBasedFiveInARowGame:
             move = input()
             if move == 'e':
                 eval = self.game.evalBoard()
-                print("CurrentEval: ",eval)
+                print("CurrentEval: ", eval)
                 continue
+            if move == 'd':
+                self.game.debug()
             coord = move.split(",")
             if len(coord) < 2 or len(coord) > 2:
                 print("!!! Give coord eg. 3,2 !!!")
