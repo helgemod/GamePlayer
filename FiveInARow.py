@@ -60,7 +60,7 @@ class FiveInARow:
         #self.rows = 3
         self.whoHas = self.X_TOKEN
         self.playersToken = self.X_TOKEN
-        self.board = sd.StrideDimension((1, 1)) #cols=6 rows=3
+        self.board = sd.StrideDimension((9, 9)) #cols=6 rows=3
         self.board.fillData(self.NO_TOKEN)
         self.computerAlgo = mma.GameAlgo(self.evalBoard,
                                            self.moveX, self.moveO,
@@ -85,7 +85,7 @@ class FiveInARow:
             return False
         self.board.setData(coordinates, token)
         self.__invertWhoHas()
-        self.__extendBoardIfCloseToEdge()
+        #self.__extendBoardIfCloseToEdge()
         return True
     def getComputersMoveForCurrentPosition(self):
         #move = self.computerAlgo.calculateMove(mma.MINMAX_ALGO, self.whoHas == self.X_TOKEN)
@@ -196,11 +196,6 @@ class FiveInARow:
     def undoMove(self, move):
         self.board.setDataAtIndex(move, self.NO_TOKEN)
     def getPossibleMoves(self):
-
-        #print("")
-        #print("------")
-        #print("")
-
         winnerOfCurrentPos = self.getWinnerOfCurrentPosition()
         if winnerOfCurrentPos is None:
             # Try to limit possible moves! Otherwise algo will be too slow.
@@ -220,10 +215,10 @@ class FiveInARow:
                 minX = min(coord[0], minX)
                 minY = min(coord[1], minY)
 
-            limitXUp = maxX + 1
-            limitXDown = minX - 1
-            limitYUp = maxY + 1
-            limitYDown = minY - 1
+            limitXUp = maxX + 2
+            limitXDown = minX - 2
+            limitYUp = maxY + 2
+            limitYDown = minY - 2
 
             retList = []
             for moveInd in moveList:
@@ -538,34 +533,128 @@ class FiveInARow:
                 self.evalRes += evaluations[pattern]
                 #print("Found "+pattern+" in "+dataStr+" at " + str(result.span()) + " for a val of: " + str(evaluations[pattern]))
         return True # True => Continue scan
+
+    def evaluateList(self, dataList):
+
+        evaluations = {'XXXXX': self.MAX_EVAL,
+                       '-XXXX': 20,
+                       'XXXX-': 20,
+                       'X-XXX': 20,
+                       'XXX-X': 20,
+                       'OXXX--': 7,
+                       '-XXX-': 10,
+                       '--XXXO': 7,
+                       'XX-X-': 10,
+                       '-XX-X': 10,
+                       'X-XX-': 10,
+                       '-X-XX': 10,
+                       '-X-X-': 5,
+                       '-XX-': 5,
+                       '---XX0': 2,
+                       'OXX---': 2,
+                       '-X-': 1,
+                       'OOOOO': self.MIN_EVAL,
+                       '-OOOO': -20,
+                       'OOOO-': -20,
+                       'OOO-O': -20,
+                       'O-OOO': -20,
+                       'XOOO--': -7,
+                       '-OOO-': -10,
+                       '--OOOX': -7,
+                       'OO-O-': -10,
+                       '-OO-O': -10,
+                       'O-OO-': -10,
+                       '-O-OO': -10,
+                       '-O-O-': -5,
+                       '-OO-': -5,
+                       'XOO---': -2,
+                       '---OOX': -2,
+                       '-O-': -1
+                       }
+
+        #print("Regarding: "+what+" "+str(startCoordDic))
+        dataStr = ''.join(dataList)
+        for pattern in evaluations:
+            result = re.search(pattern, dataStr)
+            if result is not None:
+                return evaluations[pattern]
+
+        return 0
+
     evalRes = 0
     def debug(self):
+        #print("*** DEBUG *** TBD")
+
+        moveList = self.getPossibleMoves()
+        moveEvalDict = {}
+        for move in moveList:
+            moveCoords = tuple(self.board.dimCoordinateForIndex(move))
+            # 1) Evaluate col, row, diagonals BEFORE move
+            precol = self.getColForCoord(moveCoords)
+            prerow = self.getRowForCoord(moveCoords)
+            prediaup = self.getDiagonalForCoordUp(moveCoords)
+            prediadw = self.getDiagonalForCoordDown(moveCoords)
+            preEval = self.evaluateList(precol)
+            preEval += self.evaluateList(prerow)
+            preEval += self.evaluateList(prediaup)
+            preEval += self.evaluateList(prediadw)
+
+            # 2) Try the move
+            self.moveX(move)
+
+            # 3) Evaluate after the move try
+            postcol = self.getColForCoord(moveCoords)
+            postrow = self.getRowForCoord(moveCoords)
+            postdiaup = self.getDiagonalForCoordUp(moveCoords)
+            postdiadw = self.getDiagonalForCoordDown(moveCoords)
+            postEval = self.evaluateList(postcol)
+            postEval += self.evaluateList(postrow)
+            postEval += self.evaluateList(postdiaup)
+            postEval += self.evaluateList(postdiadw)
+
+            # 4) Undo the move try
+            self.undoMove(move)
+
+            evalDiff = postEval - preEval
+
+            moveEvalDict[moveCoords] = evalDiff
+
+        print("PRE SORT", moveEvalDict)
+        sorted_values = sorted(moveEvalDict.values(), reverse=True)
+        print(sorted_values)  # [(1, 1), (3, 4), (2, 9)]
+        sortedDict = {}
+        for i in sorted_values:
+            for k in moveEvalDict.keys():
+                if moveEvalDict[k] == i:
+                    sortedDict[k] = moveEvalDict[k]
+        print("POST SORT", sortedDict)
 
 
 
-        self.evalRes = 0
-        self.__scanBoard(5, self.help)
-        print("Current Evaluation of board:", self.evalRes)
-
-    def toWhichDownDiagonalBelongsCoord(self, coord):
+    def getColForCoord(self, coord):
+        col = self.board.getDimensionalData((coord[0], None))
+        return col
+    def getRowForCoord(self, coord):
+        row = self.board.getDimensionalData((None, coord[1]))
+        return row
+    def getDiagonalForCoordDown(self, coord):
         r = coord[0]+coord[1]-1
         c = 1
         if r > self.getNumberOfRows():
             r = self.getNumberOfRows()
             c = self.getNumberOfColumns() - (self.getNumberOfRows() - coord[1])
 
-        dia = self.board.getDimensionalDataWithDirection((c, r),(1, -1))
+        dia = self.board.getDimensionalDataWithDirection((c, r), (1, -1))
 
         return dia
-
-    def toWhichUpDiagonalBelongsCoord(self, coord):
+    def getDiagonalForCoordUp(self, coord):
         c = coord[0]-coord[1]+1
         r = 1
         if c < 1:
             c = 1
             r = coord[1] - coord[0] + 1
 
-        dia = self.board.getDimensionalDataWithDirection((c,r),(1,1))
+        dia = self.board.getDimensionalDataWithDirection((c, r), (1, 1))
         return dia
 
 
@@ -591,10 +680,19 @@ class TextBasedFiveInARowGame:
             self.printBoard()
             if self.game.whoHas == self.playersToken:
                 try:
+                    self.game.debug()
                     playersmove = self.__askPlayerForMove()
                     self.game.makeMove(playersmove, self.playersToken)
-                    print("DownDia:", str(self.game.toWhichDownDiagonalBelongsCoord(playersmove)))
-                    print("UpDia:", str(self.game.toWhichUpDiagonalBelongsCoord(playersmove)))
+                    """
+                    c = self.game.getColForCoord(playersmove)
+                    r = self.game.getRowForCoord(playersmove)
+                    dd = self.game.getDiagonalForCoordDown(playersmove)
+                    du = self.game.getDiagonalForCoordUp(playersmove)
+                    print("Col:", str(c), self.game.evaluateList(c))
+                    print("Row:", str(r), self.game.evaluateList(r))
+                    print("DownDia:", str(dd), self.game.evaluateList(dd))
+                    print("UpDia:", str(du), self.game.evaluateList(du))
+                    """
                     #print("")
                     #self.printBoard()
                     #print("")
