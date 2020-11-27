@@ -65,7 +65,7 @@ class FiveInARow:
         self.computerAlgo = mma.GameAlgo(self.evalBoard,
                                            self.moveX, self.moveO,
                                            self.undoMove, self.undoMove,
-                                           self.getPossibleMoves, self.getPossibleMoves,
+                                           self.getPossibleMovesMaximizer, self.getPossibleMovesMinimizer,
                                            self.MIN_EVAL, self.MAX_EVAL)
 
     ########################################
@@ -88,8 +88,8 @@ class FiveInARow:
         #self.__extendBoardIfCloseToEdge()
         return True
     def getComputersMoveForCurrentPosition(self):
-        #move = self.computerAlgo.calculateMove(mma.MINMAX_ALGO, self.whoHas == self.X_TOKEN)
-        move = self.computerAlgo.calculateMove(mma.MINMAXALPHABETAPRUNING_ALGO, self.whoHas == self.X_TOKEN, 4)
+        move = self.computerAlgo.calculateMove(mma.MINMAX_ALGO, self.whoHas == self.X_TOKEN, 4)
+        #move = self.computerAlgo.calculateMove(mma.MINMAXALPHABETAPRUNING_ALGO, self.whoHas == self.X_TOKEN, 5)
         #move = self.computerAlgo.calculateMove(mma.MINMAX_ALGO_WITH_LOGGING, self.whoHas == self.X_TOKEN)
         return (self.board.dimCoordinateForIndex(move), self.whoHas)
     def getWinnerOfCurrentPosition(self):
@@ -121,7 +121,7 @@ class FiveInARow:
     #
     ###############################################
     # Callback functions used by computer algorithm
-    def evalBoard(self):
+    def evalBoardOLD(self):
         addEval = 0
         minValueForListLength = 5
         for r in range(self.getNumberOfRows()):
@@ -189,12 +189,73 @@ class FiveInARow:
             else:
                 break
         return addEval
+    def evalBoard(self):
+        addEval = 0
+        for r in range(self.getNumberOfRows()):
+            row = self.board.getDimensionalData((None, r+1))
+            tmpEval1 = self.evaluateList(row)
+            if tmpEval1 == self.MIN_EVAL or tmpEval1 == self.MAX_EVAL:
+                return tmpEval1
+            addEval += tmpEval1
+
+
+
+        for c in range(self.getNumberOfColumns()):
+            col = self.board.getDimensionalData((c+1, None))
+            tmpEval2 = self.evaluateList(col)
+            if tmpEval2 == self.MIN_EVAL or tmpEval2 == self.MAX_EVAL:
+                return tmpEval2
+            addEval += tmpEval2
+
+
+        # Now check diagonals UPWARDS /
+        for dcu in range(self.getNumberOfColumns()):
+            diaUpCol = self.board.getDimensionalDataWithDirection((dcu + 1, 1), (1, 1))
+            tmpEval3 = self.evaluateList(diaUpCol)
+            if tmpEval3 == self.MIN_EVAL or tmpEval3 == self.MAX_EVAL:
+                return tmpEval3
+            addEval += tmpEval3
+
+        for dru in range(self.getNumberOfRows()-1):
+            diaUpRow = self.board.getDimensionalDataWithDirection((1, dru + 2), (1, 1))
+            tmpEval4 = self.evaluateList(diaUpRow)
+            if tmpEval4 == self.MIN_EVAL or tmpEval4 == self.MAX_EVAL:
+                return tmpEval4
+            addEval += tmpEval4
+
+        # Now check diagonals DOWNWARDS \
+        #
+        # 1) Start in upper-left corner and go downward in first col
+        #    and pick out the downward diagonal.
+        noOfCol = self.getNumberOfColumns()
+        noOfRows = self.getNumberOfRows()
+        for dcd in range(noOfCol):
+            diaDownCol = self.board.getDimensionalDataWithDirection((1, noOfRows - dcd), (1, -1))
+            tmpEval5 = self.evaluateList(diaDownCol)
+            if tmpEval5 == self.MIN_EVAL or tmpEval5 == self.MAX_EVAL:
+                return tmpEval5
+            addEval += tmpEval5
+
+        # 2) Start in upper-left corner and go right in upper row
+        #    and pick out the downward diagonal.
+        for drd in range(noOfRows-1):
+            diaDownRow = self.board.getDimensionalDataWithDirection((drd + 2, noOfRows), (1, -1))
+            tmpEval6 = self.evaluateList(diaDownRow)
+            if tmpEval6 == self.MIN_EVAL or tmpEval6 == self.MAX_EVAL:
+                return tmpEval6
+            addEval += tmpEval6
+        return addEval
     def moveX(self, move):
         self.board.setDataAtIndex(move, self.X_TOKEN)
     def moveO(self, move):
         self.board.setDataAtIndex(move, self.O_TOKEN)
     def undoMove(self, move):
         self.board.setDataAtIndex(move, self.NO_TOKEN)
+    def getPossibleMovesMaximizer(self):
+        return self.getMovesSorted(True)
+    def getPossibleMovesMinimizer(self):
+        return self.getMovesSorted(False)
+
     def getPossibleMoves(self):
         winnerOfCurrentPos = self.getWinnerOfCurrentPosition()
         if winnerOfCurrentPos is None:
@@ -581,8 +642,51 @@ class FiveInARow:
 
         return 0
 
+    def getMovesSorted(self, regardingMaximizer):
+        moveList = self.getPossibleMoves()
+        moveEvalDict = {}
+        for move in moveList:
+            moveCoords = tuple(self.board.dimCoordinateForIndex(move))
+            # 1) Evaluate col, row, diagonals BEFORE move
+            preEval = self.evaluateList(self.getColForCoord(moveCoords))
+            preEval += self.evaluateList(self.getRowForCoord(moveCoords))
+            preEval += self.evaluateList(self.getDiagonalForCoordUp(moveCoords))
+            preEval += self.evaluateList(self.getDiagonalForCoordDown(moveCoords))
+
+            # 2) Try the move
+            if regardingMaximizer:
+                self.moveX(move)
+            else:
+                self.moveO(move)
+
+            # 3) Evaluate after the move try
+            postEval = self.evaluateList(self.getColForCoord(moveCoords))
+            postEval += self.evaluateList(self.getRowForCoord(moveCoords))
+            postEval += self.evaluateList(self.getDiagonalForCoordUp(moveCoords))
+            postEval += self.evaluateList(self.getDiagonalForCoordDown(moveCoords))
+
+            # 4) Undo the move try
+            self.undoMove(move)
+
+            evalDiff = postEval - preEval
+            moveEvalDict[move] = evalDiff
+
+        sorted_values = sorted(moveEvalDict.values(), reverse=regardingMaximizer)
+        sortedDict = {}
+        for i in sorted_values:
+            for k in moveEvalDict.keys():
+                if moveEvalDict[k] == i:
+                    sortedDict[k] = moveEvalDict[k]
+
+        sortedMoveList = list(sortedDict.keys())
+        if len(sortedMoveList) > 3:
+            return sortedMoveList[:3]
+        else:
+            return sortedMoveList
+
+
     evalRes = 0
-    def debug(self):
+    def debug(self, regardingMaximizer):
         #print("*** DEBUG *** TBD")
 
         moveList = self.getPossibleMoves()
@@ -600,7 +704,10 @@ class FiveInARow:
             preEval += self.evaluateList(prediadw)
 
             # 2) Try the move
-            self.moveX(move)
+            if regardingMaximizer:
+                self.moveX(move)
+            else:
+                self.moveO(move)
 
             # 3) Evaluate after the move try
             postcol = self.getColForCoord(moveCoords)
@@ -620,7 +727,7 @@ class FiveInARow:
             moveEvalDict[moveCoords] = evalDiff
 
         print("PRE SORT", moveEvalDict)
-        sorted_values = sorted(moveEvalDict.values(), reverse=True)
+        sorted_values = sorted(moveEvalDict.values(), reverse=regardingMaximizer)
         print(sorted_values)  # [(1, 1), (3, 4), (2, 9)]
         sortedDict = {}
         for i in sorted_values:
@@ -680,7 +787,8 @@ class TextBasedFiveInARowGame:
             self.printBoard()
             if self.game.whoHas == self.playersToken:
                 try:
-                    self.game.debug()
+                    #self.game.debug(True)
+                    #self.game.getMovesSorted(True)
                     playersmove = self.__askPlayerForMove()
                     self.game.makeMove(playersmove, self.playersToken)
                     """
@@ -699,19 +807,20 @@ class TextBasedFiveInARowGame:
                 except Exception as err:
                     print(str(err))
             else:
-                #move = self.game.getComputersMoveForCurrentPosition()
-                #self.game.makeMove(move[0], move[1])
-                #print("Computer moves: ", move[0])
-
-                playersmove = self.__askPlayerForMove()
-                self.game.makeMove(playersmove, self.computersToken)
+                move = self.game.getComputersMoveForCurrentPosition()
+                self.game.makeMove(move[0], move[1])
+                print("Computer moves: ", move[0])
+                #self.game.debug(False)
+                #self.game.getMovesSorted(False)
+                #playersmove = self.__askPlayerForMove()
+                #self.game.makeMove(playersmove, self.computersToken)
 
                 #print("")
                 #self.printBoard()
                 #print("")
 
 
-            winnerOfCurrentPos = None #self.game.getWinnerOfCurrentPosition()
+            winnerOfCurrentPos = self.game.getWinnerOfCurrentPosition()
             if winnerOfCurrentPos is None:
                 continue
 
