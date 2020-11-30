@@ -104,7 +104,31 @@ class FiveInARow:
 
                    'XXXXX': MAX_EVAL,
                    'OOOOO': MIN_EVAL,
-                   }
+                }
+
+
+
+    potentialWinnersX = {
+                '-XXX-',
+                '-X-XX-',
+                '-XX-X-',
+                'XXXX-',
+                '-XXXX',
+                'XX-XX',
+                'X-XXX',
+                'XXX-X',
+            }
+    potentialWinnersO = {
+                '-OOO-',
+                '-O-OO-',
+                '-OO-O-',
+                'OOOO-',
+                '-OOOO',
+                'OO-OO',
+                'O-OOO',
+                'OOO-O',
+    }
+
 
     # In future this can be able to point at different algorithms
     # to test them.
@@ -115,7 +139,7 @@ class FiveInARow:
         #self.rows = 3
         self.whoHas = self.X_TOKEN
         self.playersToken = self.X_TOKEN
-        self.board = sd.StrideDimension((9, 9)) #cols=6 rows=3
+        self.board = sd.StrideDimension((6, 6)) #cols=6 rows=3
         self.board.fillData(self.NO_TOKEN)
         self.computerAlgo = mma.GameAlgo(self.evalBoard,
                                            self.moveX, self.moveO,
@@ -140,7 +164,7 @@ class FiveInARow:
             return False
         self.board.setData(coordinates, token)
         self.__invertWhoHas()
-        #self.__extendBoardIfCloseToEdge()
+        self.__extendBoardIfCloseToEdge()
         return True
     def getComputersMoveForCurrentPosition(self):
         # Special case
@@ -173,7 +197,7 @@ class FiveInARow:
         return None
     def resetGame(self):
         self.whoHas = self.X_TOKEN
-        self.board = sd.StrideDimension((9, 9))  # cols=6 rows=3
+        self.board = sd.StrideDimension((6, 6))  # cols=6 rows=3
         self.board.fillData(self.NO_TOKEN)
         #self.board.fillData(self.NO_TOKEN)#clearboard
     def getNumberOfColumns(self):
@@ -506,6 +530,21 @@ class FiveInARow:
                 #print("Found "+pattern+" in "+dataStr+" at " + str(result.span()) + " for a val of: " + str(evaluations[pattern]))
         return True # True => Continue scan
 
+    def isThereAPotentialWinnerInThisList(self, dataList, regardingMaximizer):
+        dataStr = ''.join(dataList)
+        if regardingMaximizer:
+            for pattern in self.potentialWinnersX:
+                result = re.search(pattern, dataStr)
+                if result is not None:
+                    return True
+        else:
+            for pattern in self.potentialWinnersO:
+                result = re.search(pattern, dataStr)
+                if result is not None:
+                    return True
+
+
+
     def evaluateList(self, dataList):
         dataStr = ''.join(dataList)
         addVal = 0
@@ -523,11 +562,11 @@ class FiveInARow:
             return []
 
         readList = self.board.getIndexListWhereDataIs(self.NO_TOKEN)
+
         moveList = []
         middleIndex = len(readList) // 2
         loops = len(readList)//2
         moveList.append(readList[middleIndex])
-
 
         for i in range(1, loops+1):
             itoadd = middleIndex - i
@@ -542,16 +581,134 @@ class FiveInARow:
         print("")
         """
 
+        listOfPotentialWinnerMoves = []
+
         moveEvalDict = {}
         bestDiffMax = self.MIN_EVAL
         bestDiffMin = self.MAX_EVAL
         for move in moveList:
+
             moveCoords = tuple(self.board.dimCoordinateForIndex(move))
+            #print("Trying move", moveCoords, move)
             # 1) Evaluate col, row, diagonals BEFORE move
             preColEval = self.getColForCoord(moveCoords)
             preRowEval = self.getRowForCoord(moveCoords)
             preDiaUpEval = self.getDiagonalForCoordUp(moveCoords)
             preDiaDwEval = self.getDiagonalForCoordDown(moveCoords)
+
+            # First check if that move will defeat a potential winner for opponent.
+            if self.isThereAPotentialWinnerInThisList(preColEval, not regardingMaximizer):
+                #print("POTENTIAL WINNER OPPONENT COL and Coord:", preColEval, moveCoords)
+                # 2) Try the move
+                if regardingMaximizer:
+                    self.moveX(move)
+                else:
+                    self.moveO(move)
+                post = self.getColForCoord(moveCoords)
+                if not self.isThereAPotentialWinnerInThisList(post, not regardingMaximizer):
+                    #print("NO LONGER a potential win in this COL for OPPONENT APPEND IT", post)
+                    listOfPotentialWinnerMoves.append(move)
+                self.undoMove(move)
+
+            if self.isThereAPotentialWinnerInThisList(preColEval, regardingMaximizer):
+                #print("POTENTIAL WINNER FOR ME COL and Coord:", preColEval, moveCoords)
+                # 2) Try the move
+                if not regardingMaximizer:
+                    self.moveX(move)
+                else:
+                    self.moveO(move)
+                post = self.getColForCoord(moveCoords)
+                if not self.isThereAPotentialWinnerInThisList(post, regardingMaximizer):
+                    #print("NO LONGER a potential win in this COL for ME APPEND IT", post)
+                    listOfPotentialWinnerMoves.append(move)
+                self.undoMove(move)
+
+            if self.isThereAPotentialWinnerInThisList(preRowEval, not regardingMaximizer):
+                #print("POTENTIAL WINNER OPPONENT ROW and Coord:", preColEval, moveCoords)
+                # 2) Try the move
+                if regardingMaximizer:
+                    self.moveX(move)
+                else:
+                    self.moveO(move)
+                post = self.getRowForCoord(moveCoords)
+                if not self.isThereAPotentialWinnerInThisList(post, not regardingMaximizer):
+                    #print("NO LONGER a potential win in this ROW for OPPONENT APPEND IT", post)
+                    listOfPotentialWinnerMoves.append(move)
+                self.undoMove(move)
+
+            if self.isThereAPotentialWinnerInThisList(preRowEval, regardingMaximizer):
+                #print("POTENTIAL WINNER FOR ME  ROW and Coord:", preColEval, moveCoords)
+                # 2) Try the move
+                if not regardingMaximizer:
+                    self.moveX(move)
+                else:
+                    self.moveO(move)
+                post = self.getRowForCoord(moveCoords)
+                if not self.isThereAPotentialWinnerInThisList(post, regardingMaximizer):
+                    #print("NO LONGER a potential win in this ROW for ME APPEND IT", post)
+                    listOfPotentialWinnerMoves.append(move)
+                self.undoMove(move)
+
+
+
+            if self.isThereAPotentialWinnerInThisList(preDiaUpEval, not regardingMaximizer):
+                #print("POTENTIAL WINNER OPPONENT DIA UP and Coord:", preColEval, moveCoords)
+                # 2) Try the move
+                if regardingMaximizer:
+                    self.moveX(move)
+                else:
+                    self.moveO(move)
+                post = self.getDiagonalForCoordUp(moveCoords)
+                if not self.isThereAPotentialWinnerInThisList(post, not regardingMaximizer):
+                    #print("NO LONGER a potential win in this DIA UP for OPPONENT APPEND IT", post)
+                    listOfPotentialWinnerMoves.append(move)
+                self.undoMove(move)
+
+            if self.isThereAPotentialWinnerInThisList(preDiaUpEval, regardingMaximizer):
+                #print("POTENTIAL WINNER FOR ME DIA UP and Coord:", preColEval, moveCoords)
+                # 2) Try the move
+                if not regardingMaximizer:
+                    self.moveX(move)
+                else:
+                    self.moveO(move)
+                post = self.getDiagonalForCoordUp(moveCoords)
+                if not self.isThereAPotentialWinnerInThisList(post, regardingMaximizer):
+                    #print("NO LONGER a potential win in this DIA UP for ME APPEND IT", post)
+                    listOfPotentialWinnerMoves.append(move)
+                self.undoMove(move)
+
+            if self.isThereAPotentialWinnerInThisList(preDiaDwEval, not regardingMaximizer):
+                #print("POTENTIAL WINNER OPPONENT DIA DWN and Coord:", preColEval, moveCoords)
+                # 2) Try the move
+                if regardingMaximizer:
+                    self.moveX(move)
+                else:
+                    self.moveO(move)
+                post = self.getDiagonalForCoordDown(moveCoords)
+                if not self.isThereAPotentialWinnerInThisList(post, not regardingMaximizer):
+                    #print("NO LONGER a potential win in this DIA DWN for OPPONENT APPEND IT", post)
+                    listOfPotentialWinnerMoves.append(move)
+                self.undoMove(move)
+
+            if self.isThereAPotentialWinnerInThisList(preDiaDwEval, regardingMaximizer):
+                #print("POTENTIAL WINNER FOR ME DIA DWN and Coord:", preColEval, moveCoords)
+                # 2) Try the move
+                if not regardingMaximizer:
+                    self.moveX(move)
+                else:
+                    self.moveO(move)
+                post = self.getDiagonalForCoordDown(moveCoords)
+                if not self.isThereAPotentialWinnerInThisList(post, regardingMaximizer):
+                    #print("NO LONGER a potential win in this DIA DWN for ME APPEND IT", post)
+                    listOfPotentialWinnerMoves.append(move)
+                self.undoMove(move)
+
+            #print("----->", listOfPotentialWinnerMoves,len(listOfPotentialWinnerMoves))
+            if len(listOfPotentialWinnerMoves) > 0:
+                #print("got move that is filled..no loger go on...")
+                continue
+
+
             preEval = self.evaluateList(preColEval)
             preEval += self.evaluateList(preRowEval)
             preEval += self.evaluateList(preDiaUpEval)
@@ -598,6 +755,14 @@ class FiveInARow:
                     pass
                     #print("----so bad move for O. Dont add")
 
+        if len(listOfPotentialWinnerMoves) > 0:
+            #print("RETURINGG!!! ----->", listOfPotentialWinnerMoves)
+            """
+            for c in listOfPotentialWinnerMoves:
+                print(self.board.dimCoordinateForIndex(c),end='')
+            print("")
+            """
+            return listOfPotentialWinnerMoves
 
         ## REMOVE DEBUG FROM HERE
         #tmpList = [self.board.dimCoordinateForIndex(x) for x in moveEvalDict.keys()]
@@ -630,59 +795,27 @@ class FiveInARow:
         bestOfDic = {}
         cntr = 0
         for key in sortedDict.keys():
-            if sortedDict[key] > bestEval - 10:
+            if sortedDict[key] > bestEval - 15:
                 bestOfDic[key] = sortedDict[key]
             cntr += 1
-            if cntr == 3:
+            if cntr == 6:
                 break
-
+        """
         print("Best of dict with moves and their values:")
         for key in bestOfDic.keys():
             print("%s-%s" % (str(self.board.dimCoordinateForIndex(key)), str(bestOfDic[key])), end=' ')
         print("")
+        """
 
         listToReturn = list(bestOfDic.keys())
-        print("RETURN> ", listToReturn)
+        """
         for i in listToReturn:
-            print(self.board.dimCoordinateForIndex(i))
+            print(self.board.dimCoordinateForIndex(i),end='')
+        print("")
+        """
 
         return listToReturn
 
-        if len(sorted_values) > 2:
-            secondBestEval = sorted_values[1]
-            if abs(bestEval - secondBestEval) > 10:
-                #The best move is so good. Only deliver that!
-                listToReturn = [sortedDict[bestEval]]
-                print("Returning only move: case it so much better!", listToReturn, [self.board.dimCoordinateForIndex(sortedDict[bestEval])])
-                return listToReturn
-
-
-        dbgList = []
-        cntr=0
-        for key in sortedDict:
-            dbgList.append((self.board.dimCoordinateForIndex(key), sortedDict[key]))
-            cntr += 1
-            if cntr >= 3:
-                break
-
-        #dbgList = [self.board.dimCoordinateForIndex(x) for x in sortedMoveList[:5]]
-        if regardingMaximizer:
-            t = 'X'
-        else:
-            t = 'O'
-        print(t, dbgList)
-
-        isThereAnAbsoluteBestMove = False
-
-        #tmpList = [x for x in sortedDict.keys() if sortedDict[x] == bestEval]
-        #print("These are same bestEval", tmpList)
-        #if len(tmpList)
-
-
-        if len(sortedMoveList) > 3:
-            return sortedMoveList[:3]
-        else:
-            return sortedMoveList
 
 
     evalRes = 0
@@ -743,7 +876,7 @@ class TextBasedFiveInARowGame:
             if self.game.whoHas == self.playersToken:
                 try:
                     #self.game.debug(True)
-                    self.game.getMovesSorted(True)
+                    #self.game.getMovesSorted(True)
                     playersmove = self.__askPlayerForMove()
                     self.game.makeMove(playersmove, self.playersToken)
                     """
@@ -762,16 +895,16 @@ class TextBasedFiveInARowGame:
                 except Exception as err:
                     print(str(err))
             else:
-                #move = self.game.getComputersMoveForCurrentPosition()
-                #self.game.makeMove(move[0], move[1])
-                #print("Computer moves: ", move[0])
+                move = self.game.getComputersMoveForCurrentPosition()
+                self.game.makeMove(move[0], move[1])
+                print("Computer moves: ", move[0])
 
-                self.game.getMovesSorted(False)
-                playersmove = self.__askPlayerForMove()
-                self.game.makeMove(playersmove, self.computersToken)
+                #self.game.getMovesSorted(False)
+                #playersmove = self.__askPlayerForMove()
+                #self.game.makeMove(playersmove, self.computersToken)
 
 
-            continue
+            #continue
             winnerOfCurrentPos = self.game.getWinnerOfCurrentPosition()
             if winnerOfCurrentPos is None:
                 continue
