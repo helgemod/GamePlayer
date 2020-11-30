@@ -130,7 +130,11 @@ class TicTacToe:
     def undoMove(self,move):
         self.board.setDataAtIndex(move,self.NO_TOKEN)
     def getPossibleMoves(self):
-        return self.board.getIndexListWhereDataIs(self.NO_TOKEN)
+        winnerOfCurrentPos = self.getWinnerOfCurrentPosition()
+        if winnerOfCurrentPos is None:
+            return self.board.getIndexListWhereDataIs(self.NO_TOKEN)
+        else:
+            return []  # If the game is over. No possible moves further can be done!
 
 
     ########################
