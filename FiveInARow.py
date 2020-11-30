@@ -22,6 +22,7 @@ import MinMaxAlgorithm as mma
 import StrideDimensions as sd
 import re
 import time
+import random
 import logging
 logging.basicConfig(level=logging.DEBUG, format='%(levelname)s=> %(message)s')
 
@@ -50,6 +51,60 @@ class FiveInARow:
     ANALYZE_DIADW = 'AnalyzeDiagonalDown'
     KEY_COORD_COL = 'keyCoordColumn'
     KEY_COORD_ROW = 'keyCoordRow'
+
+    # Change this for different weight of different positions
+    evaluations = {#Combinations with one
+                   '-X-': 1,
+                   '-O-': -1,
+                   # Combinations with two
+                   '-XX-': 10,
+                   '-OO-': -10,
+                   '-X-X-': 5,
+                   '-O-O-': -5,
+                   '---XX0': 2,
+                   'OXX---': 2,
+                   '---OOX': -2,
+                   'XOO---': -2,
+                    # Combinaitons with three
+                   '-XXX-': 25,
+                   '-OOO-': -25,
+
+                   'OXXX--': 7,
+                   '--XXXO': 7,
+                   'XOOO--': -7,
+                   '--OOOX': -7,
+
+                    '-XX-X-': 25,
+                    '-X-XX-': 25,
+                    'OXX-X-': 10,
+                    '-X-XXO': 10,
+                    'OX-XX-': 10,
+                    '-XX-XO': 10,
+                    'OXX-XO': 0,
+
+                    '-OO-O-': -25,
+                    '-O-OO-': -25,
+                    'XOO-O-': -10,
+                    '-O-OOX': -10,
+                    'XO-OO-': -10,
+                    '-OO-OX': -10,
+                    'XOO-OX': 0,
+
+                    # Combinations with four
+                    '-XXXX-': 50,
+                    '-XXXXO': 30,
+                    'OXXXX-': 30,
+                    '-OOOO-': -50,
+                    'XOOOO-': -30,
+                    '-OOOOX': -30,
+                    '-X-XXX-': 50,
+                    '-XXX-X-': 50,
+                    '-O-OOO-': -50,
+                    '-OOO-O-': -50,
+
+                   'XXXXX': MAX_EVAL,
+                   'OOOOO': MIN_EVAL,
+                   }
 
     # In future this can be able to point at different algorithms
     # to test them.
@@ -88,9 +143,20 @@ class FiveInARow:
         #self.__extendBoardIfCloseToEdge()
         return True
     def getComputersMoveForCurrentPosition(self):
+        # Special case
+        # 1) Is it the first move?
+        if self.__isBoardEmpty():
+            return ((self.getNumberOfColumns()//2, self.getNumberOfRows()//2), self.whoHas)
+
+        ocoord = self.isFirstMoveForO()
+        if ocoord is not None:
+            return (ocoord, self.whoHas)
+
         #move = self.computerAlgo.calculateMove(mma.MINMAX_ALGO, self.whoHas == self.X_TOKEN, 4)
-        #move = self.computerAlgo.calculateMove(mma.MINMAXALPHABETAPRUNING_ALGO, self.whoHas == self.X_TOKEN, 4)
-        move = self.computerAlgo.calculateMove(mma.MINMAX_ALGO_WITH_LOGGING, self.whoHas == self.X_TOKEN, 4)
+        move = self.computerAlgo.calculateMove(mma.MINMAXALPHABETAPRUNING_ALGO, self.whoHas == self.X_TOKEN, 4)
+        #move = self.computerAlgo.calculateMove(mma.MINMAX_ALGO_WITH_LOGGING, self.whoHas == self.X_TOKEN, 4)
+        if move is None:
+            print("\n\n**********MOVE IS NONE*********\n\n")
         return (self.board.dimCoordinateForIndex(move), self.whoHas)
     def getWinnerOfCurrentPosition(self):
         allBoardData = self.board.getAllData()
@@ -107,7 +173,7 @@ class FiveInARow:
         return None
     def resetGame(self):
         self.whoHas = self.X_TOKEN
-        self.board = sd.StrideDimension((1, 1))  # cols=6 rows=3
+        self.board = sd.StrideDimension((9, 9))  # cols=6 rows=3
         self.board.fillData(self.NO_TOKEN)
         #self.board.fillData(self.NO_TOKEN)#clearboard
     def getNumberOfColumns(self):
@@ -131,27 +197,28 @@ class FiveInARow:
             addEval += tmpEval1
 
 
-
+        pass
         for c in range(self.getNumberOfColumns()):
             col = self.board.getDimensionalData((c+1, None))
             tmpEval2 = self.evaluateList(col)
-            if tmpEval1 <= self.MIN_EVAL + 200 or tmpEval1 >= self.MAX_EVAL - 200:
+            if tmpEval2 <= self.MIN_EVAL + 200 or tmpEval2 >= self.MAX_EVAL - 200:
                 return tmpEval2
             addEval += tmpEval2
 
 
         # Now check diagonals UPWARDS /
+
         for dcu in range(self.getNumberOfColumns()):
             diaUpCol = self.board.getDimensionalDataWithDirection((dcu + 1, 1), (1, 1))
             tmpEval3 = self.evaluateList(diaUpCol)
-            if tmpEval1 <= self.MIN_EVAL + 200 or tmpEval1 >= self.MAX_EVAL - 200:
+            if tmpEval3 <= self.MIN_EVAL + 200 or tmpEval3 >= self.MAX_EVAL - 200:
                 return tmpEval3
             addEval += tmpEval3
 
         for dru in range(self.getNumberOfRows()-1):
             diaUpRow = self.board.getDimensionalDataWithDirection((1, dru + 2), (1, 1))
             tmpEval4 = self.evaluateList(diaUpRow)
-            if tmpEval1 <= self.MIN_EVAL + 200 or tmpEval1 >= self.MAX_EVAL - 200:
+            if tmpEval4 <= self.MIN_EVAL + 200 or tmpEval4 >= self.MAX_EVAL - 200:
                 return tmpEval4
             addEval += tmpEval4
 
@@ -164,7 +231,7 @@ class FiveInARow:
         for dcd in range(noOfCol):
             diaDownCol = self.board.getDimensionalDataWithDirection((1, noOfRows - dcd), (1, -1))
             tmpEval5 = self.evaluateList(diaDownCol)
-            if tmpEval1 <= self.MIN_EVAL + 200 or tmpEval1 >= self.MAX_EVAL - 200:
+            if tmpEval5 <= self.MIN_EVAL + 200 or tmpEval5 >= self.MAX_EVAL - 200:
                 return tmpEval5
             addEval += tmpEval5
 
@@ -173,7 +240,7 @@ class FiveInARow:
         for drd in range(noOfRows-1):
             diaDownRow = self.board.getDimensionalDataWithDirection((drd + 2, noOfRows), (1, -1))
             tmpEval6 = self.evaluateList(diaDownRow)
-            if tmpEval1 <= self.MIN_EVAL + 200 or tmpEval1 >= self.MAX_EVAL - 200:
+            if tmpEval6 <= self.MIN_EVAL + 200 or tmpEval6 >= self.MAX_EVAL - 200:
                 return tmpEval6
             addEval += tmpEval6
         return addEval
@@ -296,7 +363,21 @@ class FiveInARow:
         return self.board.getData(coordinate)==self.NO_TOKEN
     def __isBoardEmpty(self):
         return all(x == self.NO_TOKEN or x is None for x in self.board.getAllData())
-
+    def isFirstMoveForO(self):
+        if self.board.getAllData().count(self.X_TOKEN) == 1:
+            xind = self.board.getIndexAtFirstOccurrenceOfData(self.X_TOKEN)
+            xcoord = self.board.dimCoordinateForIndex(xind)
+            ocoord = [1, 1]
+            while True:
+                xadd = random.randint(-1, 1)
+                yadd = random.randint(-1, 1)
+                ocoord[0] = xcoord[0] + xadd
+                ocoord[1] = xcoord[1] + yadd
+                if not ocoord == xcoord:
+                    break
+            return ocoord
+        else:
+            return None
 
     # If it is a long game, the board may be extended during the game.
     def __extendBoardIfCloseToEdge(self):
@@ -417,92 +498,24 @@ class FiveInARow:
 
     def help(self, what, startCoordDic, dataList):
 
-        evaluations = {'XXXXX': self.MAX_EVAL,
-                       '-XXXX': 10,
-                       'XXXX-': 10,
-                       'X-XXX': 10,
-                       'XXX-X': 10,
-                       'OXXX--': 3,
-                       '-XXX-': 5,
-                       '--XXXO': 5,
-                       'XX-X-': 5,
-                       '-XX-X': 5,
-                       'X-XX-': 5,
-                       '-X-XX': 5,
-                       '-XX-': 3,
-                       '-X-': 1,
-                       'OOOOO': self.MIN_EVAL,
-                       '-OOOO': -10,
-                       'OOOO-': -10,
-                       'OOO-O': -10,
-                       'O-OOO': -10,
-                       'XOOO--': -3,
-                       '-OOO-': -5,
-                       '--OOOX': -3,
-                       'OO-O-': -5,
-                       '-OO-O': -5,
-                       'O-OO-': -5,
-                       '-O-OO': -5,
-                       '-OO-': -3,
-                       '-O-': -1
-                       }
-
         #print("Regarding: "+what+" "+str(startCoordDic))
         dataStr = ''.join(dataList)
-        for pattern in evaluations:
+        for pattern in self.evaluations:
             result = re.search(pattern, dataStr)
             if result is not None:
-                print(what, pattern, evaluations[pattern])
-                self.evalRes += evaluations[pattern]
+                print(what, pattern, self.evaluations[pattern])
+                self.evalRes += self.evaluations[pattern]
                 #print("Found "+pattern+" in "+dataStr+" at " + str(result.span()) + " for a val of: " + str(evaluations[pattern]))
         return True # True => Continue scan
 
     def evaluateList(self, dataList):
-
-        evaluations = {'XXXXX': self.MAX_EVAL,
-                       '-XXXX': 50,
-                       'XXXX-': 50,
-                       'X-XXX': 50,
-                       'XXX-X': 50,
-                       'OXXX--': 7,
-                       '-XXX-': 25,
-                       '--XXXO': 3,
-                       'XX-X-': 25,
-                       '-XX-X': 25,
-                       'X-XX-': 25,
-                       '-X-XX': 25,
-                       '-X-X-': 5,
-                       '-XX-': 5,
-                       '---XX0': 2,
-                       'OXX---': 2,
-                       '-X-': 1,
-                       'OOOOO': self.MIN_EVAL,
-                       '-OOOO': -50,
-                       'OOOO-': -50,
-                       'OOO-O': -50,
-                       'O-OOO': -50,
-                       'XOOO--': -7,
-                       '-OOO-': -25,
-                       '--OOOX': -3,
-                       'OO-O-': -25,
-                       '-OO-O': -25,
-                       'O-OO-': -25,
-                       '-O-OO': -25,
-                       '-O-O-': -5,
-                       '-OO-': -5,
-                       'XOO---': -2,
-                       '---OOX': -2,
-                       '-O-': -1
-                       }
-
-        #print("Regarding: "+what+" "+str(startCoordDic))
         dataStr = ''.join(dataList)
-        for pattern in evaluations:
+        addVal = 0
+        for pattern in self.evaluations:
             result = re.search(pattern, dataStr)
             if result is not None:
-                return evaluations[pattern]
-
-        return 0
+                addVal += self.evaluations[pattern]
+        return addVal
 
     def getMovesSorted(self, regardingMaximizer):
 
@@ -516,10 +529,14 @@ class FiveInARow:
         for move in moveList:
             moveCoords = tuple(self.board.dimCoordinateForIndex(move))
             # 1) Evaluate col, row, diagonals BEFORE move
-            preEval = self.evaluateList(self.getColForCoord(moveCoords))
-            preEval += self.evaluateList(self.getRowForCoord(moveCoords))
-            preEval += self.evaluateList(self.getDiagonalForCoordUp(moveCoords))
-            preEval += self.evaluateList(self.getDiagonalForCoordDown(moveCoords))
+            preColEval = self.getColForCoord(moveCoords)
+            preRowEval = self.getRowForCoord(moveCoords)
+            preDiaUpEval = self.getDiagonalForCoordUp(moveCoords)
+            preDiaDwEval = self.getDiagonalForCoordDown(moveCoords)
+            preEval = self.evaluateList(preColEval)
+            preEval += self.evaluateList(preRowEval)
+            preEval += self.evaluateList(preDiaUpEval)
+            preEval += self.evaluateList(preDiaDwEval)
 
             # 2) Try the move
             if regardingMaximizer:
@@ -528,10 +545,14 @@ class FiveInARow:
                 self.moveO(move)
 
             # 3) Evaluate after the move try
-            postEval = self.evaluateList(self.getColForCoord(moveCoords))
-            postEval += self.evaluateList(self.getRowForCoord(moveCoords))
-            postEval += self.evaluateList(self.getDiagonalForCoordUp(moveCoords))
-            postEval += self.evaluateList(self.getDiagonalForCoordDown(moveCoords))
+            postColEval = self.getColForCoord(moveCoords)
+            postRowEval = self.getRowForCoord(moveCoords)
+            postDiaUpEval = self.getDiagonalForCoordUp(moveCoords)
+            postDiaDwEval = self.getDiagonalForCoordDown(moveCoords)
+            postEval = self.evaluateList(postColEval)
+            postEval += self.evaluateList(postRowEval)
+            postEval += self.evaluateList(postDiaUpEval)
+            postEval += self.evaluateList(postDiaDwEval)
 
             # 4) Undo the move try
             self.undoMove(move)
@@ -546,14 +567,25 @@ class FiveInARow:
                 if moveEvalDict[k] == i:
                     sortedDict[k] = moveEvalDict[k]
 
+        #print("sortedDict", sortedDict)
+        dbgList = []#list(sortedDict)
+        #print("dbgList", dbgList)
+        cntr=0
+        for key in sortedDict:
+            dbgList.append((self.board.dimCoordinateForIndex(key), sortedDict[key]))
+            cntr += 1
+            if cntr >= 3:
+                break
+
+        #dbgList = [self.board.dimCoordinateForIndex(x) for x in sortedMoveList[:3]]
+        if regardingMaximizer:
+            t = 'X'
+        else:
+            t = 'O'
+        print(t, dbgList)
+
         sortedMoveList = list(sortedDict.keys())
         if len(sortedMoveList) > 3:
-            dbgList = [self.board.dimCoordinateForIndex(x) for x in sortedMoveList[:3]]
-            if regardingMaximizer:
-                t='X'
-            else:
-                t = 'O'
-            #print(t, dbgList)
             return sortedMoveList[:3]
         else:
             return sortedMoveList
@@ -617,7 +649,7 @@ class TextBasedFiveInARowGame:
             if self.game.whoHas == self.playersToken:
                 try:
                     #self.game.debug(True)
-                    #self.game.getMovesSorted(True)
+                    self.game.getMovesSorted(True)
                     playersmove = self.__askPlayerForMove()
                     self.game.makeMove(playersmove, self.playersToken)
                     """
@@ -636,19 +668,16 @@ class TextBasedFiveInARowGame:
                 except Exception as err:
                     print(str(err))
             else:
-                move = self.game.getComputersMoveForCurrentPosition()
-                self.game.makeMove(move[0], move[1])
-                print("Computer moves: ", move[0])
-                #self.game.debug(False)
-                #self.game.getMovesSorted(False)
-                #playersmove = self.__askPlayerForMove()
-                #self.game.makeMove(playersmove, self.computersToken)
+                #move = self.game.getComputersMoveForCurrentPosition()
+                #self.game.makeMove(move[0], move[1])
+                #print("Computer moves: ", move[0])
 
-                #print("")
-                #self.printBoard()
-                #print("")
+                self.game.getMovesSorted(False)
+                playersmove = self.__askPlayerForMove()
+                self.game.makeMove(playersmove, self.computersToken)
 
 
+            continue
             winnerOfCurrentPos = self.game.getWinnerOfCurrentPosition()
             if winnerOfCurrentPos is None:
                 continue
@@ -697,7 +726,7 @@ class TextBasedFiveInARowGame:
     def __swapToken(self):
         tmpToken = self.playersToken
         self.playersToken = self.computersToken
-        self.computersToken=tmpToken
+        self.computersToken = tmpToken
     def __askPlayerForMove(self):
         while True:
             print("Your move(" + self.playersToken + ")>")
