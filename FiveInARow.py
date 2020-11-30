@@ -54,11 +54,11 @@ class FiveInARow:
 
     # Change this for different weight of different positions
     evaluations = {#Combinations with one
-                   '-X-': 1,
-                   '-O-': -1,
+                   '-X-': 2,
+                   '-O-': -2,
                    # Combinations with two
-                   '-XX-': 10,
-                   '-OO-': -10,
+                   '-XX-': 6,
+                   '-OO-': -6,
                    '-X-X-': 5,
                    '-O-O-': -5,
                    '---XX0': 2,
@@ -66,24 +66,24 @@ class FiveInARow:
                    '---OOX': -2,
                    'XOO---': -2,
                     # Combinaitons with three
-                   '-XXX-': 25,
-                   '-OOO-': -25,
+                   '-XXX-': 20,
+                   '-OOO-': -20,
 
-                   'OXXX--': 7,
-                   '--XXXO': 7,
-                   'XOOO--': -7,
-                   '--OOOX': -7,
+                   'OXXX--': 10,
+                   '--XXXO': 10,
+                   'XOOO--': -10,
+                   '--OOOX': -10,
 
-                    '-XX-X-': 25,
-                    '-X-XX-': 25,
+                    '-XX-X-': 20,
+                    '-X-XX-': 20,
                     'OXX-X-': 10,
                     '-X-XXO': 10,
                     'OX-XX-': 10,
                     '-XX-XO': 10,
                     'OXX-XO': 0,
 
-                    '-OO-O-': -25,
-                    '-O-OO-': -25,
+                    '-OO-O-': -20,
+                    '-O-OO-': -20,
                     'XOO-O-': -10,
                     '-O-OOX': -10,
                     'XO-OO-': -10,
@@ -196,8 +196,6 @@ class FiveInARow:
                 return tmpEval1
             addEval += tmpEval1
 
-
-        pass
         for c in range(self.getNumberOfColumns()):
             col = self.board.getDimensionalData((c+1, None))
             tmpEval2 = self.evaluateList(col)
@@ -524,8 +522,29 @@ class FiveInARow:
             print("Current position is won for !", winnerOfCurrentPos)
             return []
 
-        moveList = self.board.getIndexListWhereDataIs(self.NO_TOKEN)
+        readList = self.board.getIndexListWhereDataIs(self.NO_TOKEN)
+        moveList = []
+        middleIndex = len(readList) // 2
+        loops = len(readList)//2
+        moveList.append(readList[middleIndex])
+
+
+        for i in range(1, loops+1):
+            itoadd = middleIndex - i
+            if 0 <= itoadd < len(readList):
+                moveList.append(readList[itoadd])
+            itoadd = middleIndex + i
+            if 0 <= itoadd < len(readList):
+                moveList.append(readList[itoadd])
+        """
+        for i in range(len(moveList)):
+            print(self.board.dimCoordinateForIndex(moveList[i]), end=' ')
+        print("")
+        """
+
         moveEvalDict = {}
+        bestDiffMax = self.MIN_EVAL
+        bestDiffMin = self.MAX_EVAL
         for move in moveList:
             moveCoords = tuple(self.board.dimCoordinateForIndex(move))
             # 1) Evaluate col, row, diagonals BEFORE move
@@ -558,8 +577,35 @@ class FiveInARow:
             self.undoMove(move)
 
             evalDiff = postEval - preEval
-            moveEvalDict[move] = evalDiff
 
+            if regardingMaximizer:
+                bestDiffMax = max(bestDiffMax, evalDiff)
+                #print("X> Move, evalDiff, best", self.board.dimCoordinateForIndex(move), evalDiff, bestDiffMax, end=' ')
+                if evalDiff > (bestDiffMax - 10):
+                    #print("Within 10 from max...so add")
+                    moveEvalDict[move] = evalDiff
+                else:
+                    pass
+                    #print("---so bad move for X...dont add")
+
+            else:
+                bestDiffMin = min(bestDiffMin, evalDiff)
+                #print("O> Move, evalDiff, best", self.board.dimCoordinateForIndex(move), evalDiff, bestDiffMin, end=' ')
+                if evalDiff < (bestDiffMin + 10):
+                    #print("Within 10 from best so add..")
+                    moveEvalDict[move] = evalDiff
+                else:
+                    pass
+                    #print("----so bad move for O. Dont add")
+
+
+        ## REMOVE DEBUG FROM HERE
+        #tmpList = [self.board.dimCoordinateForIndex(x) for x in moveEvalDict.keys()]
+        #print("Moves that are ok...", tmpList)
+        ## REMOVE DEBUG TO HERE
+
+        # So far all sensible moves are evaluated and placed into a dictionary.
+        # Keys are moves. Value are the "evalDiff" (how much difference that move makes).
         sorted_values = sorted(moveEvalDict.values(), reverse=regardingMaximizer)
         sortedDict = {}
         for i in sorted_values:
@@ -567,9 +613,51 @@ class FiveInARow:
                 if moveEvalDict[k] == i:
                     sortedDict[k] = moveEvalDict[k]
 
-        #print("sortedDict", sortedDict)
-        dbgList = []#list(sortedDict)
-        #print("dbgList", dbgList)
+
+
+        sortedMoveList = list(sortedDict.keys())
+        #print("And list of only the moves...(can be returned?):", sortedMoveList)
+
+        bestEval = sorted_values[0]
+
+        """
+        print("Sorted dict with moves and their values:")
+        for key in sortedDict.keys():
+            print("%s-%s"%(str(self.board.dimCoordinateForIndex(key)),str(sortedDict[key])), end=' ')
+        print("")
+        """
+
+        bestOfDic = {}
+        cntr = 0
+        for key in sortedDict.keys():
+            if sortedDict[key] > bestEval - 10:
+                bestOfDic[key] = sortedDict[key]
+            cntr += 1
+            if cntr == 3:
+                break
+
+        print("Best of dict with moves and their values:")
+        for key in bestOfDic.keys():
+            print("%s-%s" % (str(self.board.dimCoordinateForIndex(key)), str(bestOfDic[key])), end=' ')
+        print("")
+
+        listToReturn = list(bestOfDic.keys())
+        print("RETURN> ", listToReturn)
+        for i in listToReturn:
+            print(self.board.dimCoordinateForIndex(i))
+
+        return listToReturn
+
+        if len(sorted_values) > 2:
+            secondBestEval = sorted_values[1]
+            if abs(bestEval - secondBestEval) > 10:
+                #The best move is so good. Only deliver that!
+                listToReturn = [sortedDict[bestEval]]
+                print("Returning only move: case it so much better!", listToReturn, [self.board.dimCoordinateForIndex(sortedDict[bestEval])])
+                return listToReturn
+
+
+        dbgList = []
         cntr=0
         for key in sortedDict:
             dbgList.append((self.board.dimCoordinateForIndex(key), sortedDict[key]))
@@ -577,14 +665,20 @@ class FiveInARow:
             if cntr >= 3:
                 break
 
-        #dbgList = [self.board.dimCoordinateForIndex(x) for x in sortedMoveList[:3]]
+        #dbgList = [self.board.dimCoordinateForIndex(x) for x in sortedMoveList[:5]]
         if regardingMaximizer:
             t = 'X'
         else:
             t = 'O'
         print(t, dbgList)
 
-        sortedMoveList = list(sortedDict.keys())
+        isThereAnAbsoluteBestMove = False
+
+        #tmpList = [x for x in sortedDict.keys() if sortedDict[x] == bestEval]
+        #print("These are same bestEval", tmpList)
+        #if len(tmpList)
+
+
         if len(sortedMoveList) > 3:
             return sortedMoveList[:3]
         else:
