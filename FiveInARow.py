@@ -122,7 +122,7 @@ class FiveInARow:
     ]
     potentialWinnersO = [
         ['-OOO-',  [0,4]],
-        ['-O-OO-', [3]],
+        ['-O-OO-', [2]],
         ['-OO-O-', [3]],
     ]
     definitivWinnersX = [
@@ -140,7 +140,7 @@ class FiveInARow:
         ['OOOO-', [4]],
     ]
     winnersX = [
-        ['XXXXX', [0,4]],
+        ['XXXXX', [0, 4]],
     ]
     winnersO = [
         ['OOOOO', [0, 4]],
@@ -152,11 +152,9 @@ class FiveInARow:
     computerAlgo = None
 
     def __init__(self):
-        #self.cols = 6
-        #self.rows = 3
         self.whoHas = self.X_TOKEN
         self.playersToken = self.X_TOKEN
-        self.board = sd.StrideDimension((6, 6)) #cols=6 rows=3
+        self.board = sd.StrideDimension((6, 6))
         self.board.fillData(self.NO_TOKEN)
         self.computerAlgo = mma.GameAlgo(self.evalBoard,
                                            self.moveX, self.moveO,
@@ -172,6 +170,7 @@ class FiveInARow:
     #Call this to get the board for print.
     def getBoard(self):
         return self.board.getDimensionalData((None, None))
+
     # Makes an actual move and do all administrations. Return True if move could be made. Else False.
     def makeMove(self, coordinates, token):
         try:
@@ -183,6 +182,7 @@ class FiveInARow:
         self.__invertWhoHas()
         self.__extendBoardIfCloseToEdge()
         return True
+
     def getComputersMoveForCurrentPosition(self):
         # Special case
         # 1) Is it the first move?
@@ -199,6 +199,7 @@ class FiveInARow:
         if move is None:
             print("\n\n**********MOVE IS NONE*********\n\n")
         return (self.board.dimCoordinateForIndex(move), self.whoHas)
+
     def getWinnerOfCurrentPosition(self):
         allBoardData = self.board.getAllData()
         if allBoardData.count(self.X_TOKEN) < 5 and allBoardData.count(self.O_TOKEN) < 5:
@@ -212,12 +213,15 @@ class FiveInARow:
         elif self.__isBoardFull():
             return self.NO_TOKEN
         return None
+
     def resetGame(self):
         self.whoHas = self.X_TOKEN
-        self.board = sd.StrideDimension((6, 6))  # cols=6 rows=3
+        self.board = sd.StrideDimension((6, 6))
         self.board.fillData(self.NO_TOKEN)
+
     def getNumberOfColumns(self):
         return self.board.dimensions[0]
+
     def getNumberOfRows(self):
         return self.board.dimensions[1]
 
@@ -282,14 +286,19 @@ class FiveInARow:
                 return tmpEval6
             addEval += tmpEval6
         return addEval
+
     def moveX(self, move):
         self.board.setDataAtIndex(move, self.X_TOKEN)
+
     def moveO(self, move):
         self.board.setDataAtIndex(move, self.O_TOKEN)
+
     def undoMove(self, move):
         self.board.setDataAtIndex(move, self.NO_TOKEN)
+
     def getPossibleMovesMaximizer(self):
         return self.getMovesSorted(True)
+
     def getPossibleMovesMinimizer(self):
         return self.getMovesSorted(False)
 
@@ -302,12 +311,12 @@ class FiveInARow:
     #
     ########################
 
-
     def __invertWhoHas(self):
         if self.whoHas==self.X_TOKEN:
             self.whoHas=self.O_TOKEN
         else:
             self.whoHas=self.X_TOKEN
+
     # Checks if the "token" is ok to place at "coordinate". Raises exception if not!
     def __checkMove(self, coordinate, token):
         if token not in (self.X_TOKEN, self.O_TOKEN):
@@ -326,6 +335,7 @@ class FiveInARow:
 
         if not self.__isFree((x, y)):
             raise Exception("!!! OCCUPIED SQUARE !!!")
+
     # Takes a list and returns X if all elements are X. Return o if all elements are O. Else return None.
     def __checkIfAllArePlayerTokens(self, ll):
         if self.NO_TOKEN in ll:
@@ -336,15 +346,17 @@ class FiveInARow:
             return self.O_TOKEN
         return None
 
-
     def __isBoardFull(self):
         if self.NO_TOKEN in self.board.getAllData():
             return False
         return True
+
     def __isFree(self,coordinate):
         return self.board.getData(coordinate)==self.NO_TOKEN
+
     def __isBoardEmpty(self):
         return all(x == self.NO_TOKEN or x is None for x in self.board.getAllData())
+
     def __isFirstMoveForO(self):
         if self.board.getAllData().count(self.X_TOKEN) == 1:
             xind = self.board.getIndexAtFirstOccurrenceOfData(self.X_TOKEN)
@@ -375,6 +387,7 @@ class FiveInARow:
         extends = self.__numberOfExtendsNeededToEdgeRight()
         if extends > 0:
             self.board.extendDimension(1, 1, False, self.NO_TOKEN)
+
     def __numberOfExtendsNeededToEdgeLow(self):
         extendsNeeded = 0
         ll = self.board.getDimensionalData((None, 1))
@@ -385,6 +398,7 @@ class FiveInARow:
             if not all([x == self.NO_TOKEN for x in ll]):
                 extendsNeeded = 1
         return extendsNeeded
+
     def __numberOfExtendsNeededToEdgeHigh(self):
         extendsNeeded = 0
         ll = self.board.getDimensionalData((None, self.getNumberOfRows()))
@@ -395,6 +409,7 @@ class FiveInARow:
             if not all([x == self.NO_TOKEN for x in ll]):
                 extendsNeeded = 1
         return extendsNeeded
+
     def __numberOfExtendsNeededToEdgeLeft(self):
         extendsNeeded = 0
         ll = self.board.getDimensionalData((1, None))
@@ -405,6 +420,7 @@ class FiveInARow:
             if not all([x == self.NO_TOKEN for x in ll]):
                 extendsNeeded = 1
         return extendsNeeded
+
     def __numberOfExtendsNeededToEdgeRight(self):
         extendsNeeded = 0
         ll = self.board.getDimensionalData((self.getNumberOfColumns(), None))
@@ -425,99 +441,6 @@ class FiveInARow:
     #
     ################################
 
-
-
-
-    # Takes a list and checks if there are five in a row of either X or O. If not: return None
-    def __checkInARowInList(self, listToCheck, howMany):
-        if len(listToCheck) < howMany:
-            return None
-        if listToCheck.count(self.X_TOKEN) < howMany and listToCheck.count(self.O_TOKEN) < howMany:
-            return None
-        for i in range(len(listToCheck)):
-            listCutOut = listToCheck[i:i + howMany]
-            if len(listCutOut) < howMany:
-                break
-            token = self.__checkIfAllArePlayerTokens(listCutOut)
-            if token is not None:
-                return token
-        return
-
-    # Takes a list and check if there are 'howMany' in a row with NO_TOKEN before and after.
-    def __checkFreeInARow(self, listToCheck, howMany):
-        if len(listToCheck) < howMany:
-            return None
-        if listToCheck.count(self.X_TOKEN) < howMany and listToCheck.count(self.O_TOKEN) < howMany:
-            return None
-        for i in range(len(listToCheck)):
-            listCutOut = listToCheck[i:i + howMany + 2]
-            if len(listToCheck) < howMany + 2:
-                break
-            if listCutOut[0] == self.NO_TOKEN and listCutOut[-1] == self.NO_TOKEN and listCutOut[
-                                                                                      1:-2] == self.X_TOKEN:
-                return self.X_TOKEN
-            elif listCutOut[0] == self.NO_TOKEN and listCutOut[-1] == self.NO_TOKEN and listCutOut[
-                                                                                        1:-2] == self.O_TOKEN:
-                return self.O_TOKEN
-        return None
-
-    def __checkOneOfAKind(self, listToCheck, howMany, inRange):
-        if len(listToCheck) < howMany:
-            return None
-        if listToCheck.count(self.X_TOKEN) < howMany and listToCheck.count(self.O_TOKEN) < howMany:
-            return None
-        for i in range(len(listToCheck)):
-            listCutOut = listToCheck[i:i + inRange]
-            if len(listCutOut) < howMany or len(listCutOut) < inRange:
-                break
-            if listCutOut.count(self.X_TOKEN) == howMany and listCutOut.count(self.NO_TOKEN) == len(
-                    listCutOut) - howMany:
-                return self.X_TOKEN
-            elif listCutOut.count(self.O_TOKEN) == howMany and listCutOut.count(self.NO_TOKEN) == len(
-                    listCutOut) - howMany:
-                return self.O_TOKEN
-        return None
-
-    def help(self, what, startCoordDic, dataList):
-
-        #print("Regarding: "+what+" "+str(startCoordDic))
-        dataStr = ''.join(dataList)
-        for pattern in self.evaluations:
-            result = re.search(pattern, dataStr)
-            if result is not None:
-                print(what, pattern, self.evaluations[pattern])
-                self.evalRes += self.evaluations[pattern]
-                #print("Found "+pattern+" in "+dataStr+" at " + str(result.span()) + " for a val of: " + str(evaluations[pattern]))
-        return True # True => Continue scan
-
-    def isThereAPotentialWinnerInThisList(self, dataList, regardingMaximizer):
-        dataStr = ''.join(dataList)
-        if dataStr[0] == self.NO_TOKEN and dataStr.count(dataStr[0]) == len(dataStr):
-            return False
-        if regardingMaximizer:
-            for pattern in self.potentialWinnersX:
-                result = re.search(pattern[0], dataStr)
-                if result is not None:
-                    return True
-        else:
-            for pattern in self.potentialWinnersO:
-                result = re.search(pattern[0], dataStr)
-                if result is not None:
-                    return True
-    def isThereADefineWinnerInThisList(self, dataList):
-        dataStr = ''.join(dataList)
-        if dataStr[0] == self.NO_TOKEN and dataStr.count(dataStr[0]) == len(dataStr):
-            return False
-        for pattern in self.definitivWinnersX:
-            result = re.search(pattern[0], dataStr)
-            if result is not None:
-                return True
-        for pattern in self.definitivWinnersO:
-            result = re.search(pattern[0], dataStr)
-            if result is not None:
-                return True
-        return False
-
     # Help methods to pick out proper moves to feed MinMax-Algo
     def evaluateList(self, dataList):
         if len(dataList) == 0:
@@ -532,141 +455,46 @@ class FiveInARow:
                 addVal += self.evaluations[pattern]
         return addVal
 
-    def isDefiniteWinner(self, move, regardingMaximizer):
-        # 1) Is there a definite winning combination
-        moveCoords = tuple(self.board.dimCoordinateForIndex(move))
-        preDataStrings = [''.join(self.getColForCoord(moveCoords))]
-        preDataStrings.append(''.join(self.getRowForCoord(moveCoords)))
-        preDataStrings.append(''.join(self.getDiagonalForCoordUp(moveCoords)))
-        preDataStrings.append(''.join(self.getDiagonalForCoordDown(moveCoords)))
-
-        foundWinPre = False
-        for dataString in preDataStrings:
-            if dataString[0] == self.NO_TOKEN and dataString.count(dataString[0]) == len(dataString):
-                continue
-            if regardingMaximizer:
-                if dataString.count(self.X_TOKEN) < 4:
-                    continue
-                for pattern in self.definitivWinnersX:
-                    result = re.search(pattern[0], dataString)
-                    if result is not None:
-                        foundWinPre = True
-                        break
-            else:
-                if dataString.count(self.O_TOKEN) < 4:
-                    continue
-                for pattern in self.definitivWinnersO:
-                    result = re.search(pattern[0], dataString)
-                    if result is not None:
-                        foundWinPre = True
-                        break
-
-        # If there is not a winning combo here. Stop processing.
-        if not foundWinPre:
-            return False
-
-        if regardingMaximizer:
-            self.moveX(move)
-        else:
-            self.moveO(move)
-
-        postDataStrings = [''.join(self.getColForCoord(moveCoords))]
-        postDataStrings.append(''.join(self.getRowForCoord(moveCoords)))
-        postDataStrings.append(''.join(self.getDiagonalForCoordUp(moveCoords)))
-        postDataStrings.append(''.join(self.getDiagonalForCoordDown(moveCoords)))
-
-        self.undoMove(move)
-
-        for dataString in postDataStrings:
-            if dataString[0] == self.NO_TOKEN and dataString.count(dataString[0]) == len(dataString):
-                continue
-            if regardingMaximizer:
-                result = re.search('XXXXX', dataString)
-                if result is not None:
-                    return True
-            else:
-                result = re.search('OOOOO', dataString)
-                if result is not None:
-                    return True
-        return False
-
-
-
-    def isPotentialWinner(self, move, regardingMaximizer):
-        moveCoords = tuple(self.board.dimCoordinateForIndex(move))
-        preDataStrings = [''.join(self.getColForCoord(moveCoords))]
-        preDataStrings.append(''.join(self.getRowForCoord(moveCoords)))
-        preDataStrings.append(''.join(self.getDiagonalForCoordUp(moveCoords)))
-        preDataStrings.append(''.join(self.getDiagonalForCoordDown(moveCoords)))
-
-        foundWinPre = False
-        for dataString in preDataStrings:
-            if dataString[0] == self.NO_TOKEN and dataString.count(dataString[0]) == len(dataString):
-                continue
-            if regardingMaximizer:
-                for pattern in self.potentialWinnersX:
-                    result = re.search(pattern[0], dataString)
-                    if result is not None:
-                        foundWinPre = True
-                        break
-            else:
-                if dataString.count(self.O_TOKEN) < 4:
-                    continue
-                for pattern in self.potentialWinnersO:
-                    result = re.search(pattern[0], dataString)
-                    if result is not None:
-                        foundWinPre = True
-                        break
-
-        # If there is not a winning combo here. Stop processing.
-        if not foundWinPre:
-            return False
-
-        # If opponent made a move here...is it still a potential winner?
-        if not regardingMaximizer:
-            self.moveX(move)
-        else:
-            self.moveO(move)
-
-        postDataStrings = [''.join(self.getColForCoord(moveCoords))]
-        postDataStrings.append(''.join(self.getRowForCoord(moveCoords)))
-        postDataStrings.append(''.join(self.getDiagonalForCoordUp(moveCoords)))
-        postDataStrings.append(''.join(self.getDiagonalForCoordDown(moveCoords)))
-
-        self.undoMove(move)
-
-        foundWinPost = False
-        for dataString in postDataStrings:
-            if dataString[0] == self.NO_TOKEN and dataString.count(dataString[0]) == len(dataString):
-                continue
-
-            if regardingMaximizer:
-                for pattern in self.potentialWinnersX:
-                    result = re.search(pattern[0], dataString)
-                    if result is not None:
-                        foundWinPost = True
-                        break
-            else:
-                if dataString.count(self.O_TOKEN) < 4:
-                    continue
-                for pattern in self.potentialWinnersO:
-                    result = re.search(pattern[0], dataString)
-                    if result is not None:
-                        foundWinPost = True
-                        break
-        if foundWinPost:
-            # After opponent move, the potential win is there. So this move is not an alternative.
-            return False
-        else:
-            # After opponent moved there, the potential win is gone. So this move represent a potential win!
-            return True
-
     def getMovesSorted(self, regardingMaximizer):
+        scanDict = self.scanBoard()
 
-        winnerOfCurrentPos = self.getWinnerOfCurrentPosition()
-        if winnerOfCurrentPos is not None:
-            print("Current position is won for !", winnerOfCurrentPos)
+        # 1 - Is there a winner on board. No more moves are possible
+        if len(scanDict[self.KEY_LIST_OF_WINNERS_X]) > 0 or len(scanDict[self.KEY_LIST_OF_WINNERS_O]) > 0:
             return []
+
+        # 2) One move away from a win
+        if regardingMaximizer:
+            # 2) If I (as X) have at least one winning move. Return the first.
+            if len(scanDict[self.KEY_LIST_OF_WINNING_MOVES_FOR_X]) > 0:
+                return [self.board.indexForDimCoordinate(scanDict[self.KEY_LIST_OF_WINNING_MOVES_FOR_X][0])]
+            # 3) If opponent (as O) have at least one winning move. Return first move, to stop him.
+            elif len(scanDict[self.KEY_LIST_OF_WINNING_MOVES_FOR_O]) > 0:
+                return [self.board.indexForDimCoordinate(scanDict[self.KEY_LIST_OF_WINNING_MOVES_FOR_O][0])]
+        else:
+            # 2) If I (as O) have at least one winning move. Return the first.
+            if len(scanDict[self.KEY_LIST_OF_WINNING_MOVES_FOR_O]) > 0:
+                return [self.board.indexForDimCoordinate(scanDict[self.KEY_LIST_OF_WINNING_MOVES_FOR_O][0])]
+            # 3) If opponent (as X) have at least one winning move. Return first move, to stop him.
+            elif len(scanDict[self.KEY_LIST_OF_WINNING_MOVES_FOR_X]) > 0:
+                return [self.board.indexForDimCoordinate(scanDict[self.KEY_LIST_OF_WINNING_MOVES_FOR_X][0])]
+
+        # 3) Potential winners.
+        if regardingMaximizer:
+            # 2) If I (as X) have potential winning moves. Return them.
+            if len(scanDict[self.KEY_LIST_OF_POTENTIAL_WINNING_MOVES_FOR_X]) > 0:
+                return [self.board.indexForDimCoordinate(x) for x in scanDict[self.KEY_LIST_OF_POTENTIAL_WINNING_MOVES_FOR_X]]
+            # 3) If opponent (as O) have potential winning moves. Return them.
+            elif len(scanDict[self.KEY_LIST_OF_POTENTIAL_WINNING_MOVES_FOR_O]) > 0:
+                return [self.board.indexForDimCoordinate(x) for x in scanDict[self.KEY_LIST_OF_POTENTIAL_WINNING_MOVES_FOR_O]]
+        else:
+            # 2) If I (as O) have potential winning moves. Return them.
+            if len(scanDict[self.KEY_LIST_OF_POTENTIAL_WINNING_MOVES_FOR_O]) > 0:
+                return [self.board.indexForDimCoordinate(x) for x in scanDict[self.KEY_LIST_OF_POTENTIAL_WINNING_MOVES_FOR_O]]
+            # 3) If opponent (as X) have potential winning moves. Return them.
+            elif len(scanDict[self.KEY_LIST_OF_POTENTIAL_WINNING_MOVES_FOR_X]) > 0:
+                return [self.board.indexForDimCoordinate(x) for x in scanDict[self.KEY_LIST_OF_POTENTIAL_WINNING_MOVES_FOR_X]]
+
+        # 5) If we come down here. There are no obvious winning move. Pick out a list of suggestions.
 
         # Ask board for all empty squares.
         readList = self.board.getIndexListWhereDataIs(self.NO_TOKEN)
@@ -683,14 +511,7 @@ class FiveInARow:
             itoadd = middleIndex + i
             if 0 <= itoadd < len(readList):
                 moveList.append(readList[itoadd])
-        """
-        for i in range(len(moveList)):
-            print(self.board.dimCoordinateForIndex(moveList[i]), end=' ')
-        print("")
-        """
 
-        listOfDefinitiveWinnerMovesForOpponent = []
-        listOfPotentialWinnerMoves  = []
         moveEvalDict = {}
         bestDiffMax = self.MIN_EVAL
         bestDiffMin = self.MAX_EVAL
@@ -698,34 +519,10 @@ class FiveInARow:
         for move in moveList:
             moveCoords = tuple(self.board.dimCoordinateForIndex(move))
 
-            ################################################
-            # Does this move mean a DEFINE win for someone?
-            ################################################
-            if self.isDefiniteWinner(move, regardingMaximizer):
-                return [move] # I win! Return directly!
-            # Is there a definite for "opponent"?
-            if self.isDefiniteWinner(move, not regardingMaximizer):
-                listOfDefinitiveWinnerMovesForOpponent.append(move)
-                continue
-
-            ###################################################
-            # Does this move mean a POTENTIAL win for someone?
-            ###################################################
-            if self.isPotentialWinner(move, regardingMaximizer):
-                listOfPotentialWinnerMoves.append(move)
-            if self.isPotentialWinner(move, not regardingMaximizer):
-                listOfPotentialWinnerMoves.append(move)
-            if len(listOfPotentialWinnerMoves) > 0:
-                continue # Don't look further if there are potential wins to consider!
-
-            preColEval = self.getColForCoord(moveCoords)
-            preRowEval = self.getRowForCoord(moveCoords)
-            preDiaUpEval = self.getDiagonalForCoordUp(moveCoords)
-            preDiaDwEval = self.getDiagonalForCoordDown(moveCoords)
-            preEval = self.evaluateList(preColEval)
-            preEval += self.evaluateList(preRowEval)
-            preEval += self.evaluateList(preDiaUpEval)
-            preEval += self.evaluateList(preDiaDwEval)
+            preEval = self.evaluateList(self.getColForCoord(moveCoords))
+            preEval += self.evaluateList(self.getRowForCoord(moveCoords))
+            preEval += self.evaluateList(self.getDiagonalForCoordUp(moveCoords))
+            preEval += self.evaluateList(self.getDiagonalForCoordDown(moveCoords))
 
             # 2) Try the move
             if regardingMaximizer:
@@ -734,14 +531,10 @@ class FiveInARow:
                 self.moveO(move)
 
             # 3) Evaluate after the move try
-            postColEval = self.getColForCoord(moveCoords)
-            postRowEval = self.getRowForCoord(moveCoords)
-            postDiaUpEval = self.getDiagonalForCoordUp(moveCoords)
-            postDiaDwEval = self.getDiagonalForCoordDown(moveCoords)
-            postEval = self.evaluateList(postColEval)
-            postEval += self.evaluateList(postRowEval)
-            postEval += self.evaluateList(postDiaUpEval)
-            postEval += self.evaluateList(postDiaDwEval)
+            postEval = self.evaluateList(self.getColForCoord(moveCoords))
+            postEval += self.evaluateList(self.getRowForCoord(moveCoords))
+            postEval += self.evaluateList(self.getDiagonalForCoordUp(moveCoords))
+            postEval += self.evaluateList(self.getDiagonalForCoordDown(moveCoords))
 
             # 4) Undo the move try
             self.undoMove(move)
@@ -752,28 +545,10 @@ class FiveInARow:
                 bestDiffMax = max(bestDiffMax, evalDiff)
                 if evalDiff > (bestDiffMax - 10):
                     moveEvalDict[move] = evalDiff
-
             else:
                 bestDiffMin = min(bestDiffMin, evalDiff)
                 if evalDiff < (bestDiffMin + 10):
                     moveEvalDict[move] = evalDiff
-
-        if len(listOfDefinitiveWinnerMovesForOpponent) > 0:
-            return listOfDefinitiveWinnerMovesForOpponent
-
-        if len(listOfPotentialWinnerMoves) > 0:
-            #print("RETURINGG!!! ----->", listOfPotentialWinnerMoves)
-            """
-            for c in listOfPotentialWinnerMoves:
-                print(self.board.dimCoordinateForIndex(c),end='')
-            print("")
-            """
-            return listOfPotentialWinnerMoves
-
-        ## REMOVE DEBUG FROM HERE
-        #tmpList = [self.board.dimCoordinateForIndex(x) for x in moveEvalDict.keys()]
-        #print("Moves that are ok...", tmpList)
-        ## REMOVE DEBUG TO HERE
 
         # So far all sensible moves are evaluated and placed into a dictionary.
         # Keys are moves. Value are the "evalDiff" (how much difference that move makes).
@@ -784,19 +559,7 @@ class FiveInARow:
                 if moveEvalDict[k] == i:
                     sortedDict[k] = moveEvalDict[k]
 
-
-
-        sortedMoveList = list(sortedDict.keys())
-        #print("And list of only the moves...(can be returned?):", sortedMoveList)
-
         bestEval = sorted_values[0]
-
-        """
-        print("Sorted dict with moves and their values:")
-        for key in sortedDict.keys():
-            print("%s-%s"%(str(self.board.dimCoordinateForIndex(key)),str(sortedDict[key])), end=' ')
-        print("")
-        """
 
         bestOfDic = {}
         cntr = 0
@@ -804,32 +567,13 @@ class FiveInARow:
             if sortedDict[key] > bestEval - 15:
                 bestOfDic[key] = sortedDict[key]
             cntr += 1
-            if cntr == 6:
+            if cntr == 3:
                 break
-        """
-        print("Best of dict with moves and their values:")
-        for key in bestOfDic.keys():
-            print("%s-%s" % (str(self.board.dimCoordinateForIndex(key)), str(bestOfDic[key])), end=' ')
-        print("")
-        """
 
         listToReturn = list(bestOfDic.keys())
-        """
-        for i in listToReturn:
-            print(self.board.dimCoordinateForIndex(i),end='')
-        print("")
-        """
-
         return listToReturn
 
-
-
-    evalRes = 0
-    def debug(self):
-        print(self.scanBoard())
-
-
-    def startAndEndCoordForMatchInCol(self, colNr, span):
+    def __startAndEndCoordForMatchInCol(self, colNr, span):
         coordStart = []
         coordEnd = []
         coordStart += [colNr]
@@ -838,7 +582,7 @@ class FiveInARow:
         coordEnd += [span[1]]
         return (tuple(coordStart), tuple(coordEnd))
 
-    def startAndEndCoordForMatchInRow(self, rowNr, span):
+    def __startAndEndCoordForMatchInRow(self, rowNr, span):
         coordStart = []
         coordEnd = []
         coordStart += [span[0] + 1]
@@ -847,7 +591,7 @@ class FiveInARow:
         coordEnd += [rowNr]
         return (tuple(coordStart), tuple(coordEnd))
 
-    def startAndEndCoordForMatchInDiagonalUpLeftSide(self, diagonalNr, span):
+    def __startAndEndCoordForMatchInDiagonalUpLeftSide(self, diagonalNr, span):
         coordStart = []
         coordEnd = []
 
@@ -859,7 +603,7 @@ class FiveInARow:
 
         return (tuple(coordStart), tuple(coordEnd))
 
-    def startAndEndCoordForMatchInDiagonalUpBottom(self, diagonalNr, span):
+    def __startAndEndCoordForMatchInDiagonalUpBottom(self, diagonalNr, span):
         coordStart = []
         coordEnd = []
 
@@ -871,7 +615,7 @@ class FiveInARow:
 
         return (tuple(coordStart), tuple(coordEnd))
 
-    def startAndEndCoordForMatchInDiagonalDownLeftSide(self, diagonalNr, span):
+    def __startAndEndCoordForMatchInDiagonalDownLeftSide(self, diagonalNr, span):
         coordStart = []
         coordEnd = []
 
@@ -883,7 +627,7 @@ class FiveInARow:
 
         return (tuple(coordStart), tuple(coordEnd))
 
-    def startAndEndCoordForMatchInDiagonalDownUpper(self, diagonalNr, span):
+    def __startAndEndCoordForMatchInDiagonalDownUpper(self, diagonalNr, span):
         coordStart = []
         coordEnd = []
 
@@ -895,7 +639,7 @@ class FiveInARow:
 
         return (tuple(coordStart), tuple(coordEnd))
 
-    def extractMovesFromMatchingPattern(self, patternList, listNumber, listString, coordMatchingFunction, patternMoveAppender):
+    def __extractMovesFromMatchingPattern(self, patternList, listNumber, listString, coordMatchingFunction, patternMoveAppender):
         retList = []
         for pattern in patternList:
             regCol = re.compile(pattern[0])
@@ -923,12 +667,12 @@ class FiveInARow:
         for columnNumber in range(1, numberOfCols+1):
             columnsAsString = ''.join(self.getColForCoord((columnNumber, 1)))
             ma = lambda move, numberToAdd: (move[0][0], move[0][1] + numberToAdd)
-            listOfPotentialWinningMovesForX += self.extractMovesFromMatchingPattern(self.potentialWinnersX, columnNumber, columnsAsString, self.startAndEndCoordForMatchInCol, ma)
-            listOfPotentialWinningMovesForO += self.extractMovesFromMatchingPattern(self.potentialWinnersO, columnNumber, columnsAsString, self.startAndEndCoordForMatchInCol, ma)
-            listOfWinningMovesForX += self.extractMovesFromMatchingPattern(self.definitivWinnersX, columnNumber, columnsAsString, self.startAndEndCoordForMatchInCol, ma)
-            listOfWinningMovesForO += self.extractMovesFromMatchingPattern(self.definitivWinnersO, columnNumber, columnsAsString, self.startAndEndCoordForMatchInCol, ma)
-            listOfWinningCombosX += (self.extractMovesFromMatchingPattern(self.winnersX, columnNumber, columnsAsString, self.startAndEndCoordForMatchInCol, ma))
-            listOfWinningCombosO += (self.extractMovesFromMatchingPattern(self.winnersO, columnNumber, columnsAsString, self.startAndEndCoordForMatchInCol, ma))
+            listOfPotentialWinningMovesForX += self.__extractMovesFromMatchingPattern(self.potentialWinnersX, columnNumber, columnsAsString, self.__startAndEndCoordForMatchInCol, ma)
+            listOfPotentialWinningMovesForO += self.__extractMovesFromMatchingPattern(self.potentialWinnersO, columnNumber, columnsAsString, self.__startAndEndCoordForMatchInCol, ma)
+            listOfWinningMovesForX += self.__extractMovesFromMatchingPattern(self.definitivWinnersX, columnNumber, columnsAsString, self.__startAndEndCoordForMatchInCol, ma)
+            listOfWinningMovesForO += self.__extractMovesFromMatchingPattern(self.definitivWinnersO, columnNumber, columnsAsString, self.__startAndEndCoordForMatchInCol, ma)
+            listOfWinningCombosX += (self.__extractMovesFromMatchingPattern(self.winnersX, columnNumber, columnsAsString, self.__startAndEndCoordForMatchInCol, ma))
+            listOfWinningCombosO += (self.__extractMovesFromMatchingPattern(self.winnersO, columnNumber, columnsAsString, self.__startAndEndCoordForMatchInCol, ma))
 
         ################################################
         #           Scanning rows
@@ -936,35 +680,35 @@ class FiveInARow:
         for rowNumber in range(1, numberOfRows+1):
             rowAsString = ''.join(self.getRowForCoord((1, rowNumber)))
             ma = lambda move, numberToAdd: (move[0][0] + numberToAdd, move[0][1])
-            listOfPotentialWinningMovesForX += self.extractMovesFromMatchingPattern(self.potentialWinnersX, rowNumber, rowAsString, self.startAndEndCoordForMatchInRow, ma)
-            listOfPotentialWinningMovesForO += self.extractMovesFromMatchingPattern(self.potentialWinnersO, rowNumber, rowAsString, self.startAndEndCoordForMatchInRow, ma)
-            listOfWinningMovesForX += self.extractMovesFromMatchingPattern(self.definitivWinnersX, rowNumber, rowAsString, self.startAndEndCoordForMatchInRow, ma)
-            listOfWinningMovesForO += self.extractMovesFromMatchingPattern(self.definitivWinnersO, rowNumber, rowAsString, self.startAndEndCoordForMatchInRow, ma)
-            listOfWinningCombosX += self.extractMovesFromMatchingPattern(self.winnersX, rowNumber, rowAsString, self.startAndEndCoordForMatchInRow, ma)
-            listOfWinningCombosO += self.extractMovesFromMatchingPattern(self.winnersO, rowNumber, rowAsString, self.startAndEndCoordForMatchInRow, ma)
+            listOfPotentialWinningMovesForX += self.__extractMovesFromMatchingPattern(self.potentialWinnersX, rowNumber, rowAsString, self.__startAndEndCoordForMatchInRow, ma)
+            listOfPotentialWinningMovesForO += self.__extractMovesFromMatchingPattern(self.potentialWinnersO, rowNumber, rowAsString, self.__startAndEndCoordForMatchInRow, ma)
+            listOfWinningMovesForX += self.__extractMovesFromMatchingPattern(self.definitivWinnersX, rowNumber, rowAsString, self.__startAndEndCoordForMatchInRow, ma)
+            listOfWinningMovesForO += self.__extractMovesFromMatchingPattern(self.definitivWinnersO, rowNumber, rowAsString, self.__startAndEndCoordForMatchInRow, ma)
+            listOfWinningCombosX += self.__extractMovesFromMatchingPattern(self.winnersX, rowNumber, rowAsString, self.__startAndEndCoordForMatchInRow, ma)
+            listOfWinningCombosO += self.__extractMovesFromMatchingPattern(self.winnersO, rowNumber, rowAsString, self.__startAndEndCoordForMatchInRow, ma)
 
-            ################################################
+        ################################################
         #           Scanning diagonal up
         ################################################
         for rdu in range(numberOfRows, 0, -1):
             diaupL = ''.join(self.board.getDimensionalDataWithDirection((1, rdu), (1, 1)))
             ma = lambda move, numberToAdd: (move[0][0] + numberToAdd, move[0][1] + numberToAdd)
-            listOfPotentialWinningMovesForX += self.extractMovesFromMatchingPattern(self.potentialWinnersX, rdu, diaupL, self.startAndEndCoordForMatchInDiagonalUpLeftSide, ma)
-            listOfPotentialWinningMovesForO += self.extractMovesFromMatchingPattern(self.potentialWinnersO, rdu, diaupL, self.startAndEndCoordForMatchInDiagonalUpLeftSide, ma)
-            listOfWinningMovesForX += self.extractMovesFromMatchingPattern(self.definitivWinnersX, rdu, diaupL, self.startAndEndCoordForMatchInDiagonalUpLeftSide, ma)
-            listOfWinningMovesForO += self.extractMovesFromMatchingPattern(self.definitivWinnersO, rdu, diaupL, self.startAndEndCoordForMatchInDiagonalUpLeftSide, ma)
-            listOfWinningCombosX += self.extractMovesFromMatchingPattern(self.winnersX, rdu, diaupL, self.startAndEndCoordForMatchInDiagonalUpLeftSide, ma)
-            listOfWinningCombosO += self.extractMovesFromMatchingPattern(self.winnersO, rdu, diaupL, self.startAndEndCoordForMatchInDiagonalUpLeftSide, ma)
+            listOfPotentialWinningMovesForX += self.__extractMovesFromMatchingPattern(self.potentialWinnersX, rdu, diaupL, self.__startAndEndCoordForMatchInDiagonalUpLeftSide, ma)
+            listOfPotentialWinningMovesForO += self.__extractMovesFromMatchingPattern(self.potentialWinnersO, rdu, diaupL, self.__startAndEndCoordForMatchInDiagonalUpLeftSide, ma)
+            listOfWinningMovesForX += self.__extractMovesFromMatchingPattern(self.definitivWinnersX, rdu, diaupL, self.__startAndEndCoordForMatchInDiagonalUpLeftSide, ma)
+            listOfWinningMovesForO += self.__extractMovesFromMatchingPattern(self.definitivWinnersO, rdu, diaupL, self.__startAndEndCoordForMatchInDiagonalUpLeftSide, ma)
+            listOfWinningCombosX += self.__extractMovesFromMatchingPattern(self.winnersX, rdu, diaupL, self.__startAndEndCoordForMatchInDiagonalUpLeftSide, ma)
+            listOfWinningCombosO += self.__extractMovesFromMatchingPattern(self.winnersO, rdu, diaupL, self.__startAndEndCoordForMatchInDiagonalUpLeftSide, ma)
 
         for cdu in range(2, numberOfCols+1):
             diaupB = ''.join(self.board.getDimensionalDataWithDirection((cdu, 1), (1, 1)))
             ma = lambda move, numberToAdd: (move[0][0] + numberToAdd, move[0][1] + numberToAdd)
-            listOfPotentialWinningMovesForX += self.extractMovesFromMatchingPattern(self.potentialWinnersX, cdu, diaupB, self.startAndEndCoordForMatchInDiagonalUpBottom, ma)
-            listOfPotentialWinningMovesForO += self.extractMovesFromMatchingPattern(self.potentialWinnersO, cdu, diaupB, self.startAndEndCoordForMatchInDiagonalUpBottom, ma)
-            listOfWinningMovesForX += self.extractMovesFromMatchingPattern(self.definitivWinnersX, cdu, diaupB, self.startAndEndCoordForMatchInDiagonalUpBottom, ma)
-            listOfWinningMovesForO += self.extractMovesFromMatchingPattern(self.definitivWinnersO, cdu, diaupB, self.startAndEndCoordForMatchInDiagonalUpBottom, ma)
-            listOfWinningCombosX += self.extractMovesFromMatchingPattern(self.winnersX, cdu, diaupB, self.startAndEndCoordForMatchInDiagonalUpBottom, ma)
-            listOfWinningCombosO += self.extractMovesFromMatchingPattern(self.winnersO, cdu, diaupB, self.startAndEndCoordForMatchInDiagonalUpBottom, ma)
+            listOfPotentialWinningMovesForX += self.__extractMovesFromMatchingPattern(self.potentialWinnersX, cdu, diaupB, self.__startAndEndCoordForMatchInDiagonalUpBottom, ma)
+            listOfPotentialWinningMovesForO += self.__extractMovesFromMatchingPattern(self.potentialWinnersO, cdu, diaupB, self.__startAndEndCoordForMatchInDiagonalUpBottom, ma)
+            listOfWinningMovesForX += self.__extractMovesFromMatchingPattern(self.definitivWinnersX, cdu, diaupB, self.__startAndEndCoordForMatchInDiagonalUpBottom, ma)
+            listOfWinningMovesForO += self.__extractMovesFromMatchingPattern(self.definitivWinnersO, cdu, diaupB, self.__startAndEndCoordForMatchInDiagonalUpBottom, ma)
+            listOfWinningCombosX += self.__extractMovesFromMatchingPattern(self.winnersX, cdu, diaupB, self.__startAndEndCoordForMatchInDiagonalUpBottom, ma)
+            listOfWinningCombosO += self.__extractMovesFromMatchingPattern(self.winnersO, cdu, diaupB, self.__startAndEndCoordForMatchInDiagonalUpBottom, ma)
 
         ################################################
         #       Scanning diagonal down
@@ -972,22 +716,30 @@ class FiveInARow:
         for rdd in range(1, numberOfRows+1):
             diadwL = ''.join(self.board.getDimensionalDataWithDirection((1, rdd), (1, -1)))
             ma = lambda move, numberToAdd: (move[0][0] + numberToAdd, move[0][1] - numberToAdd)
-            listOfPotentialWinningMovesForX += self.extractMovesFromMatchingPattern(self.potentialWinnersX, rdd, diadwL, self.startAndEndCoordForMatchInDiagonalDownLeftSide, ma)
-            listOfPotentialWinningMovesForO += self.extractMovesFromMatchingPattern(self.potentialWinnersO, rdd, diadwL, self.startAndEndCoordForMatchInDiagonalDownLeftSide, ma)
-            listOfWinningMovesForX += self.extractMovesFromMatchingPattern(self.definitivWinnersX, rdd, diadwL, self.startAndEndCoordForMatchInDiagonalDownLeftSide, ma)
-            listOfWinningMovesForO += self.extractMovesFromMatchingPattern(self.definitivWinnersO, rdd, diadwL, self.startAndEndCoordForMatchInDiagonalDownLeftSide, ma)
-            listOfWinningCombosX += self.extractMovesFromMatchingPattern(self.winnersX, rdd, diadwL, self.startAndEndCoordForMatchInDiagonalDownLeftSide, ma)
-            listOfWinningCombosO += self.extractMovesFromMatchingPattern(self.winnersO, rdd, diadwL, self.startAndEndCoordForMatchInDiagonalDownLeftSide, ma)
+            listOfPotentialWinningMovesForX += self.__extractMovesFromMatchingPattern(self.potentialWinnersX, rdd, diadwL, self.__startAndEndCoordForMatchInDiagonalDownLeftSide, ma)
+            listOfPotentialWinningMovesForO += self.__extractMovesFromMatchingPattern(self.potentialWinnersO, rdd, diadwL, self.__startAndEndCoordForMatchInDiagonalDownLeftSide, ma)
+            listOfWinningMovesForX += self.__extractMovesFromMatchingPattern(self.definitivWinnersX, rdd, diadwL, self.__startAndEndCoordForMatchInDiagonalDownLeftSide, ma)
+            listOfWinningMovesForO += self.__extractMovesFromMatchingPattern(self.definitivWinnersO, rdd, diadwL, self.__startAndEndCoordForMatchInDiagonalDownLeftSide, ma)
+            listOfWinningCombosX += self.__extractMovesFromMatchingPattern(self.winnersX, rdd, diadwL, self.__startAndEndCoordForMatchInDiagonalDownLeftSide, ma)
+            listOfWinningCombosO += self.__extractMovesFromMatchingPattern(self.winnersO, rdd, diadwL, self.__startAndEndCoordForMatchInDiagonalDownLeftSide, ma)
 
         for cdd in range(2, numberOfCols+1):
             diadwU = ''.join(self.board.getDimensionalDataWithDirection((cdd, numberOfRows), (1, -1)))
             ma = lambda move, numberToAdd: (move[0][0] + numberToAdd, move[0][1] - numberToAdd)
-            listOfPotentialWinningMovesForX += self.extractMovesFromMatchingPattern(self.potentialWinnersX, cdd, diadwU, self.startAndEndCoordForMatchInDiagonalDownUpper, ma)
-            listOfPotentialWinningMovesForO += self.extractMovesFromMatchingPattern(self.potentialWinnersO, cdd, diadwU, self.startAndEndCoordForMatchInDiagonalDownUpper, ma)
-            listOfWinningMovesForX += self.extractMovesFromMatchingPattern(self.definitivWinnersX, cdd, diadwU, self.startAndEndCoordForMatchInDiagonalDownUpper, ma)
-            listOfWinningMovesForO += self.extractMovesFromMatchingPattern(self.definitivWinnersO, cdd, diadwU, self.startAndEndCoordForMatchInDiagonalDownUpper, ma)
-            listOfWinningCombosX += self.extractMovesFromMatchingPattern(self.winnersX, cdd, diadwU, self.startAndEndCoordForMatchInDiagonalDownUpper, ma)
-            listOfWinningCombosO += self.extractMovesFromMatchingPattern(self.winnersO, cdd, diadwU, self.startAndEndCoordForMatchInDiagonalDownUpper, ma)
+            listOfPotentialWinningMovesForX += self.__extractMovesFromMatchingPattern(self.potentialWinnersX, cdd, diadwU, self.__startAndEndCoordForMatchInDiagonalDownUpper, ma)
+            listOfPotentialWinningMovesForO += self.__extractMovesFromMatchingPattern(self.potentialWinnersO, cdd, diadwU, self.__startAndEndCoordForMatchInDiagonalDownUpper, ma)
+            listOfWinningMovesForX += self.__extractMovesFromMatchingPattern(self.definitivWinnersX, cdd, diadwU, self.__startAndEndCoordForMatchInDiagonalDownUpper, ma)
+            listOfWinningMovesForO += self.__extractMovesFromMatchingPattern(self.definitivWinnersO, cdd, diadwU, self.__startAndEndCoordForMatchInDiagonalDownUpper, ma)
+            listOfWinningCombosX += self.__extractMovesFromMatchingPattern(self.winnersX, cdd, diadwU, self.__startAndEndCoordForMatchInDiagonalDownUpper, ma)
+            listOfWinningCombosO += self.__extractMovesFromMatchingPattern(self.winnersO, cdd, diadwU, self.__startAndEndCoordForMatchInDiagonalDownUpper, ma)
+
+        # Remove doublets
+        listOfWinningMovesForX = list(set(listOfWinningMovesForX))
+        listOfWinningMovesForO = list(set(listOfWinningMovesForO))
+        listOfPotentialWinningMovesForX = list(set(listOfPotentialWinningMovesForX))
+        listOfPotentialWinningMovesForO = list(set(listOfPotentialWinningMovesForO))
+        listOfWinningCombosX = list(set(listOfWinningCombosX))
+        listOfWinningCombosO = list(set(listOfWinningCombosO))
 
         return {self.KEY_LIST_OF_WINNING_MOVES_FOR_X: listOfWinningMovesForX,
                 self.KEY_LIST_OF_WINNING_MOVES_FOR_O: listOfWinningMovesForO,
@@ -1000,9 +752,11 @@ class FiveInARow:
     def getColForCoord(self, coord):
         col = self.board.getDimensionalData((coord[0], None))
         return col
+
     def getRowForCoord(self, coord):
         row = self.board.getDimensionalData((None, coord[1]))
         return row
+
     def getDiagonalForCoordDown(self, coord):
         r = coord[0]+coord[1]-1
         c = 1
@@ -1013,6 +767,7 @@ class FiveInARow:
         dia = self.board.getDimensionalDataWithDirection((c, r), (1, -1))
 
         return dia
+
     def getDiagonalForCoordUp(self, coord):
         c = coord[0]-coord[1]+1
         r = 1
@@ -1031,6 +786,11 @@ class TextBasedFiveInARowGame:
     def __init__(self):
         self.game = FiveInARow()
 
+    def debugGame(self):
+        self.game.debugMakeSetup()
+        self.printBoard()
+        self.game.debug()
+
     def play(self):
         print("*" * 11)
         print("FIVE IN A ROW")
@@ -1046,36 +806,21 @@ class TextBasedFiveInARowGame:
             self.printBoard()
             if self.game.whoHas == self.playersToken:
                 try:
-                    #self.game.debug(True)
                     #self.game.getMovesSorted(True)
                     playersmove = self.__askPlayerForMove()
                     self.game.makeMove(playersmove, self.playersToken)
-                    """
-                    c = self.game.getColForCoord(playersmove)
-                    r = self.game.getRowForCoord(playersmove)
-                    dd = self.game.getDiagonalForCoordDown(playersmove)
-                    du = self.game.getDiagonalForCoordUp(playersmove)
-                    print("Col:", str(c), self.game.evaluateList(c))
-                    print("Row:", str(r), self.game.evaluateList(r))
-                    print("DownDia:", str(dd), self.game.evaluateList(dd))
-                    print("UpDia:", str(du), self.game.evaluateList(du))
-                    """
-                    #print("")
-                    #self.printBoard()
-                    #print("")
                 except Exception as err:
                     print(str(err))
             else:
-                #move = self.game.getComputersMoveForCurrentPosition()
-                #self.game.makeMove(move[0], move[1])
-                #print("Computer moves: ", move[0])
+                move = self.game.getComputersMoveForCurrentPosition()
+                self.game.makeMove(move[0], move[1])
+                print("Computer moves: ", move[0])
 
-                self.game.getMovesSorted(False)
-                playersmove = self.__askPlayerForMove()
-                self.game.makeMove(playersmove, self.computersToken)
+                #self.game.getMovesSorted(False)
+                #playersmove = self.__askPlayerForMove()
+                #self.game.makeMove(playersmove, self.computersToken)
 
 
-            continue
             winnerOfCurrentPos = self.game.getWinnerOfCurrentPosition()
             if winnerOfCurrentPos is None:
                 continue
@@ -1121,10 +866,12 @@ class TextBasedFiveInARowGame:
             else:
                 print(i + 1, end='  ')
         print("")
+
     def __swapToken(self):
         tmpToken = self.playersToken
         self.playersToken = self.computersToken
         self.computersToken = tmpToken
+
     def __askPlayerForMove(self):
         x = 1
         y = 1
