@@ -18,8 +18,8 @@
 #
 """
 
-import MinMaxAlgorithm as mma
-import StrideDimensions as sd
+import MinMaxAlgorithm.MinMaxAlgorithm as mma
+import StrideDimensions.StrideDimensions as sd
 import re
 import time
 import random
@@ -844,7 +844,7 @@ class BoardScanner:
 class TextBasedFiveInARowGame:
     def __init__(self):
         self.game = FiveInARow()
-        self.analyzer = GameAnalyzer(self.game)
+        self.analyzer = None #GameAnalyzer(self.game)
 
     def debugGame(self):
         self.game.debugMakeSetup()
@@ -861,7 +861,9 @@ class TextBasedFiveInARowGame:
         if input() == O_TOKEN:
             self.playersToken = O_TOKEN
             self.computersToken = X_TOKEN
-        self.analyzer.startDaemon()
+
+        if self.analyzer is not None:
+            self.analyzer.startDaemon()
         while True:
             self.printBoard()
             if self.game.whoHas == self.playersToken:
@@ -902,6 +904,9 @@ class TextBasedFiveInARowGame:
                 break
             self.game.resetGame()
             self.__swapToken()
+
+        #TODO - stop threads
+        exit()
 
 
     def printBoard(self):
@@ -1056,7 +1061,6 @@ class GameAnalyzer:
         #self.analyzeAlgo.interruptAnalyze()
 
     def analyzeGame(self):
-        print("Starting analyze of game")
 
         self.set_analyze_board_as_game_board()
         self.whoHas = self.game.whoHas
@@ -1065,7 +1069,6 @@ class GameAnalyzer:
         while True:
             if self.newMove:
                 time.sleep(3)
-                print("Oh...new move...reset analyse info and restart.")
                 self.moveSuggestion = None
                 self.set_analyze_board_as_game_board()
                 self.whoHas = self.game.whoHas
@@ -1088,7 +1091,6 @@ class GameAnalyzer:
             currentDepth += 1
             if currentDepth > 12:
                 while not self.newMove:
-                    print("Well, dont dig deeper than depth 12.")
                     time.sleep(1)
 
 
@@ -1102,3 +1104,9 @@ class GameAnalyzer:
 
     def set_analyze_board_as_game_board(self):
         self.analyzeBoard.setUpWithData(self.game.board.getDataForSave())
+
+
+if __name__ == '__main__':
+    print("Welcome to GamePlayer - Five in a row!")
+    tbfir = TextBasedFiveInARowGame()
+    tbfir.play()

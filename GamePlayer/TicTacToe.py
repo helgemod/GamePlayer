@@ -18,8 +18,8 @@
 #
 """
 
-import MinMaxAlgorithm as mma
-import StrideDimensions as sd
+import MinMaxAlgorithm.MinMaxAlgorithm as mma
+import StrideDimensions.StrideDimensions as sd
 import time
 import logging
 logging.basicConfig(level=logging.DEBUG, format='%(levelname)s=> %(message)s')
@@ -377,3 +377,8 @@ class computerVsComputerGame:
             for y in range(len(list)):
                 print(list[x][y], end=' ')
             print("")
+
+if __name__ == '__main__':
+    print("Welcome to GamePlayer - Tic tac toe!")
+    ttt = TextBasedTicTacToeGame()
+    ttt.play()
