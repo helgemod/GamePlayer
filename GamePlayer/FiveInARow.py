@@ -870,6 +870,8 @@ class TextBasedFiveInARowGame:
                 try:
                     #self.game.getMovesSorted(True)
                     playersmove = self.__askPlayerForMove()
+                    if playersmove is None:
+                        break
                     self.game.makeMove(playersmove, self.playersToken)
                 except Exception as err:
                     print(str(err))
@@ -970,6 +972,8 @@ class TextBasedFiveInARowGame:
                 eval = self.game.evalBoard()
                 print("CurrentEval: ", eval)
                 continue
+            if move == 'q':
+                return None
             if move == 'd':
                 self.game.debug()
             if move == 'p':
